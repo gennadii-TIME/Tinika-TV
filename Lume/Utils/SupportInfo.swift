@@ -24,8 +24,8 @@ nonisolated enum SupportInfo {
     static let appStore = "https://github.com/gennadii-TIME/Tinika-TV"
     static let appStoreReview = "https://github.com/gennadii-TIME/Tinika-TV"
 
-    /// Scheme-stripped forms for compact on-screen display.
-    static let websiteDisplay = "tinika.tv"
+    /// Scheme-stripped forms for compact on-screen display (QR / tvOS About).
+    static let websiteDisplay = "gennadii-time.github.io/Tinika-TV"
     static let appStoreDisplay = "GitHub"
 
     static var websiteURL: URL? {
