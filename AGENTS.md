@@ -186,4 +186,5 @@ SwiftFormat + SwiftLint run as errors. Notable: `String(decoding:)` is banned; `
 ---
 
 ## GitHub
-Issues & roadmap: <https://github.com/bilipp/Lume/issues>
+Issues & roadmap: <https://github.com/gennadii-TIME/Tinika-TV/issues>  
+Upstream Lume: <https://github.com/bilipp/Lume>

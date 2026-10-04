@@ -2,7 +2,7 @@
 //  PremiumPlanTests.swift
 //  LumeTests
 //
-//  Contract tests for the TeamPlay Premium catalogue: a single lifetime
+//  Contract tests for the Tinika TV Premium catalogue: a single lifetime
 //  non-consumable, no subscriptions, no legacy bilipp / monthly IDs on sale.
 //
 
@@ -11,7 +11,7 @@ import Testing
 
 @MainActor
 struct PremiumPlanTests {
-    @Test func `product id is the TeamPlay lifetime unlock`() {
+    @Test func `product id is the Tinika TV lifetime unlock`() {
         #expect(PremiumManager.Plan.lifetime.rawValue == "time.teamplay.premium.lifetime")
     }
 

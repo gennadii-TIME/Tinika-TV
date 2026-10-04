@@ -9,7 +9,7 @@
 //  a phone (the same pattern as the Trakt device flow), with email as a
 //  read-only row. Links live in SupportInfo so both surfaces stay in sync.
 //
-//  Modified for TeamPlay: 2026-09-25 — About shows TeamPlay; removed Lume Discord
+//  Modified for Tinika TV: 2026-09-25 — About shows Tinika TV; removed Lume Discord
 //  / "Rate Lume" rows.
 //
 
@@ -58,7 +58,7 @@ extension SettingsView {
                         .background(.tint.opacity(0.1), in: .rect(cornerRadius: 6))
 
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("TeamPlay")
+                        Text("Tinika TV")
                         Text("Version \(SupportInfo.appVersion)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -81,7 +81,7 @@ extension SettingsView {
             VStack(alignment: .leading, spacing: 16) {
                 TVSettingsSectionLabel("Support")
 
-                Text("Scan the code with your phone to open the TeamPlay website.")
+                Text("Scan the code with your phone to open the Tinika TV website.")
                     .font(.system(size: 22))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, TVSettingsMetrics.rowHPadding)

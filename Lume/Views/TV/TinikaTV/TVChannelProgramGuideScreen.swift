@@ -202,12 +202,12 @@
                 HStack(spacing: 14) {
                     Text(entry.start, style: .time)
                         .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(live ? TVTeamPlayFocus.liveGreen : .white.opacity(0.8))
+                        .foregroundStyle(live ? TVTinikaFocus.liveGreen : .white.opacity(0.8))
                         .frame(width: 80, alignment: .leading)
 
                     Text(entry.title)
                         .font(.system(size: 24, weight: .semibold))
-                        .foregroundStyle(live ? TVTeamPlayFocus.liveGreen : .white)
+                        .foregroundStyle(live ? TVTinikaFocus.liveGreen : .white)
                         .lineLimit(1)
 
                     Spacer(minLength: 0)
@@ -217,13 +217,13 @@
                             .font(.system(size: 16, weight: .bold))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .background(TVTeamPlayFocus.liveRed, in: Capsule())
+                            .background(TVTinikaFocus.liveRed, in: Capsule())
                     } else if catchupOK {
                         Text("Archive")
                             .font(.system(size: 16, weight: .bold))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 4)
-                            .background(TVTeamPlayFocus.archiveAmber, in: Capsule())
+                            .background(TVTinikaFocus.archiveAmber, in: Capsule())
                     } else if past {
                         Text("Archive Unavailable")
                             .font(.system(size: 14, weight: .semibold))
@@ -255,7 +255,7 @@
                                 .font(.system(size: 18, weight: .bold))
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(TVTeamPlayFocus.liveRed, in: Capsule())
+                                .background(TVTinikaFocus.liveRed, in: Capsule())
                         } else if entry.isPast(at: now),
                                   PlayableMedia.isCatchupAvailable(stream: channel, start: entry.start, now: now)
                         {
@@ -263,7 +263,7 @@
                                 .font(.system(size: 18, weight: .bold))
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .background(TVTeamPlayFocus.archiveAmber, in: Capsule())
+                                .background(TVTinikaFocus.archiveAmber, in: Capsule())
                         }
                     }
 
@@ -275,10 +275,10 @@
                         "\(entry.start.formatted(date: .omitted, time: .shortened)) – \(entry.end.formatted(date: .omitted, time: .shortened))"
                     )
                     .font(.system(size: 24, weight: .semibold))
-                    .foregroundStyle(TVTeamPlayFocus.blue)
+                    .foregroundStyle(TVTinikaFocus.blue)
 
                     ProgressView(value: progress(for: entry))
-                        .tint(TVTeamPlayFocus.blue)
+                        .tint(TVTinikaFocus.blue)
 
                     HStack {
                         Text("\(Int((progress(for: entry) * 100).rounded()))%")

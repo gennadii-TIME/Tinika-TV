@@ -1,5 +1,5 @@
 name: 💡 Feature request
-description: Suggest an idea or enhancement for Lume.
+description: Suggest an idea or enhancement for Tinika TV.
 title: "feat: "
 labels: ["enhancement"]
 body:
@@ -13,7 +13,7 @@ body:
     attributes:
       label: Preflight
       options:
-        - label: I searched [existing issues](https://github.com/bilipp/Lume/issues) and didn't find a duplicate.
+        - label: I searched [existing issues](https://github.com/gennadii-TIME/Tinika-TV/issues) and didn't find a duplicate.
           required: true
   - type: textarea
     id: problem
@@ -34,27 +34,19 @@ body:
     id: alternatives
     attributes:
       label: Alternatives considered
-      description: Any alternative solutions or workarounds you've thought about.
+      description: Any other approaches you thought about?
     validations:
       required: false
   - type: dropdown
-    id: platform
+    id: platforms
     attributes:
-      label: Relevant platforms
-      description: Which platforms does this affect? (Select all that apply.)
+      label: Platforms
       multiple: true
       options:
-        - All platforms
         - iOS / iPadOS
         - macOS
         - tvOS
         - visionOS
-    validations:
-      required: false
-  - type: textarea
-    id: context
-    attributes:
-      label: Additional context
-      description: Mockups, links, or any other context.
+        - All / not sure
     validations:
       required: false

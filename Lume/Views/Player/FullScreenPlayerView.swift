@@ -552,7 +552,7 @@ struct FullScreenPlayerView: View {
         }
     }
 
-    /// Persist catch-up scrub position for the TeamPlay "Continue from…" prompt.
+    /// Persist catch-up scrub position for the Tinika TV "Continue from…" prompt.
     private func recordArchiveResume(force: Bool) {
         guard activeMedia.isCatchup else { return }
         let position = clock.current

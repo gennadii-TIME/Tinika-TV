@@ -219,7 +219,7 @@ nonisolated struct OpenSubtitlesClient {
 
     static func defaultUserAgent() -> String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-        return "TeamPlay v\(version ?? "1.0")"
+        return "Tinika TV v\(version ?? "1.0")"
     }
 
     // MARK: - Search

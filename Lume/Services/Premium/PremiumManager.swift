@@ -2,7 +2,7 @@
 //  PremiumManager.swift
 //  Lume
 //
-//  The single source of truth for TeamPlay Premium access, and the StoreKit 2
+//  The single source of truth for Tinika TV Premium access, and the StoreKit 2
 //  layer behind it (one-time lifetime unlock + a 30-day trial from the original
 //  App Store download).
 //

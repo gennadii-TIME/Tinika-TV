@@ -225,7 +225,7 @@ struct MainTabView: View {
         }
 
         private func tabView(selection _: Binding<AppTab>) -> some View {
-            TVTeamPlayShell { playlist in
+            TVTinikaShell { playlist in
                 // Manual "Update Channel List" — same blocking cover path as
                 // auto-sync, without requiring the playlist to be "due".
                 if activeSyncPlaylist == nil {

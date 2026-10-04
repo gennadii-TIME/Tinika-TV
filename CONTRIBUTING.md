@@ -1,10 +1,13 @@
-# Contributing to Lume
+# Contributing to Tinika TV
 
-Thanks for your interest in improving Lume! This guide covers everything you need to
+Thanks for your interest in improving Tinika TV! This guide covers everything you need to
 go from a fresh clone to an open pull request. For an overview of the project,
 architecture, and tech stack, see the [README](README.md).
 
-> **A note on content** — Lume is a *player only*. It ships with no channels, streams,
+Tinika TV is based on [Lume](https://github.com/bilipp/Lume) (AGPL-3.0). Keep Lume
+authorship and third-party license notices intact.
+
+> **A note on content** — Tinika TV is a *player only*. It ships with no channels, streams,
 > or content of its own, and contributions must not add any. Bug reports and feature
 > requests should never include real provider credentials, playlist URLs, or stream
 > links.
@@ -29,7 +32,7 @@ architecture, and tech stack, see the [README](README.md).
 
 ## Code of conduct
 
-Be respectful, constructive, and welcoming. We want Lume to be a friendly place for
+Be respectful, constructive, and welcoming. We want Tinika TV to be a friendly place for
 contributors of every experience level. Harassment or hostile behavior of any kind is
 not tolerated.
 
@@ -37,7 +40,7 @@ not tolerated.
 
 ## Ways to contribute
 
-- **Report a bug** — open a [GitHub issue](https://github.com/bilipp/Lume/issues) with
+- **Report a bug** — open a [GitHub issue](https://github.com/gennadii-TIME/Tinika-TV/issues) with
   clear reproduction steps (see [Reporting bugs](#reporting-bugs)).
 - **Propose a feature** — open an issue to discuss it *before* you start coding. This
   avoids duplicated effort and gives the idea a chance to be shaped early.
@@ -46,7 +49,7 @@ not tolerated.
 - **Improve docs** — corrections and clarifications to the README or this guide are
   always appreciated.
 
-Planned work is tracked in [GitHub Issues](https://github.com/bilipp/Lume/issues).
+Planned work is tracked in [GitHub Issues](https://github.com/gennadii-TIME/Tinika-TV/issues).
 
 ---
 
@@ -63,11 +66,11 @@ Planned work is tracked in [GitHub Issues](https://github.com/bilipp/Lume/issues
 ### First-time setup
 
 ```bash
-git clone https://github.com/bilipp/Lume.git
+git clone https://github.com/gennadii-TIME/Tinika-TV.git
 git clone https://github.com/bilipp/LumeEngine.git   # sibling directory — required
-cd Lume
+cd Tinika-TV
 ./Scripts/setup.sh        # installs git hooks + lint/format tooling
-open Lume.xcodeproj
+open Lume.xcodeproj       # scheme Lume → display name Tinika TV
 ```
 
 `./Scripts/setup.sh` is the one command you must run after cloning. It installs the
@@ -79,10 +82,10 @@ Mint). The first run builds SwiftFormat from source once (~10 s) and caches it.
 Remote dependencies (KSPlayer, FFmpegKit, VLCKit) are resolved automatically by SPM on
 first build.
 
-**[LumeEngine](https://github.com/bilipp/LumeEngine) is the exception.** Lume's own
-FFmpeg 9 engine (shipping as an opt-in beta engine) is referenced as a **local** Swift
+**[LumeEngine](https://github.com/bilipp/LumeEngine) is the exception.** The FFmpeg 9
+engine (shipping as an opt-in beta engine) is referenced as a **local** Swift
 package at `../LumeEngine`, so the project will not resolve until you have cloned it as a
-sibling of `Lume/` **and** built its FFmpeg xcframework once:
+sibling **and** built its FFmpeg xcframework once:
 
 ```bash
 cd ../LumeEngine
@@ -113,7 +116,7 @@ LumeUITests/       UI automation tests (XCTest)
 Scripts/           Build & dev-tooling helpers
 ```
 
-Lume is a **single, platform-adaptive SwiftUI codebase** targeting iOS, iPadOS, macOS,
+Tinika TV is a **single, platform-adaptive SwiftUI codebase** targeting iOS, iPadOS, macOS,
 tvOS, and visionOS. When you touch shared code, keep all five platforms in mind — and
 prefer platform-conditional code (`#if os(tvOS)`) over forking views where practical.
 
@@ -142,12 +145,12 @@ push.
 
 ## Localization
 
-Lume ships in **English and German** via String Catalogs (`.xcstrings`). If your change
-adds or alters user-facing text:
+Tinika TV ships in **nine languages** via String Catalogs (`.xcstrings`): en, de, es, fr,
+it, ja, ko, pt, zh-Hans. If your change adds or alters user-facing text:
 
 1. Add the string through the String Catalog (or via `xcstringstool sync`) — never
    hard-code user-facing strings.
-2. Provide both the English (`en`) and German (`de`) translations.
+2. Provide translations for the languages you can; English (`en`) is required.
 3. A pre-commit hook normalizes `.xcstrings` files to Xcode's canonical JSON format so
    diffs stay byte-stable — let it run rather than hand-editing the JSON.
 
@@ -155,7 +158,7 @@ adds or alters user-facing text:
 
 ## Testing
 
-Lume has an extensive suite split across **Swift Testing** (`LumeTests`) and **XCTest**
+The suite splits across **Swift Testing** (`LumeTests`) and **XCTest**
 UI automation (`LumeUITests`). **Run the suite before opening a PR**, and add or update
 tests for the behavior you change.
 
@@ -164,32 +167,32 @@ tests for the behavior you change.
 xcodebuild test \
   -project Lume.xcodeproj \
   -scheme Lume \
+  -clonedSourcePackagesDirPath ~/Library/Developer/Lume-SharedSPM \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 
 # Unit / integration only
 xcodebuild test -project Lume.xcodeproj -scheme Lume \
+  -clonedSourcePackagesDirPath ~/Library/Developer/Lume-SharedSPM \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -only-testing:LumeTests
 ```
 
 Decoding tests run against anonymized API payloads in `ExampleData/`. Shared helpers in
 `LumeTests/Helpers/TestHelpers.swift` provide an in-memory `ModelContainer` and JSON
-loaders — reuse them rather than rolling your own setup. See
-[Testing](README.md#testing) for full coverage details.
+loaders — reuse them rather than rolling your own setup.
 
 ---
 
 ## Commit messages
 
-Lume follows the [Conventional Commits](https://www.conventionalcommits.org/) format:
+Tinika TV follows the [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 ```
 <type>(<optional scope>): <short, imperative summary>
 ```
 
 Common types: `feat`, `fix`, `perf`, `refactor`, `build`, `docs`, `test`, `chore`.
-Scopes used in this repo include `sync`, `ui`, `player`, and similar. Examples from the
-history:
+Scopes used in this repo include `sync`, `ui`, `player`, and similar. Examples:
 
 ```
 fix(sync): make aborting a playlist sync actually stop it
@@ -210,7 +213,7 @@ Keep the summary in the imperative mood and under ~72 characters; add a body if 
 3. Make focused commits following the [commit message](#commit-messages) format.
 4. Ensure the **pre-commit hooks pass** (they run automatically) and the **test suite is
    green** on at least the iOS simulator.
-5. If you changed user-facing text, confirm **both `en` and `de`** are localized.
+5. If you changed user-facing text, confirm String Catalog entries are updated.
 6. Open the PR against `main` with a clear description of *what* changed and *why*, and
    link the related issue (`Closes #123`). Include screenshots or recordings for UI
    changes, ideally noting which platform(s) you verified.
@@ -221,8 +224,15 @@ A maintainer will review your PR and may request changes. Once approved, it'll b
 
 ---
 
+## Reporting bugs
+
+Use the [bug report template](https://github.com/gennadii-TIME/Tinika-TV/issues/new/choose).
+Never include real credentials, playlist URLs, or stream links.
+
+---
+
 ## License
 
-By contributing to Lume, you agree that your contributions will be licensed under the
+By contributing to Tinika TV, you agree that your contributions will be licensed under the
 **GNU Affero General Public License v3.0 (AGPL-3.0)**, the same license that covers the
 project. See [`LICENSE`](LICENSE) for the full text.

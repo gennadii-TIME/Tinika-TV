@@ -2,7 +2,7 @@
 //  SettingsView+Premium.swift
 //  Lume
 //
-//  TeamPlay Premium surfaces in Settings: status for trial / purchased / expired /
+//  Tinika TV Premium surfaces in Settings: status for trial / purchased / expired /
 //  loading, early lifetime purchase during trial, the DEBUG override, and the
 //  tvOS Premium pane. Split out of SettingsView to keep that file within the line cap.
 //
@@ -108,7 +108,7 @@ extension SettingsView {
                     }
                 }
             } header: {
-                Text("TeamPlay Premium")
+                Text("Tinika TV Premium")
             }
             .task {
                 if premium.product(for: .lifetime) == nil {
@@ -166,7 +166,7 @@ extension SettingsView {
                         .background(.tint.opacity(0.12), in: .rect(cornerRadius: 14, style: .continuous))
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("TeamPlay Premium")
+                            Text("Tinika TV Premium")
                                 .font(.system(size: 26, weight: .semibold))
                             Text(tvPremiumSubtitle)
                                 .font(.system(size: 20))

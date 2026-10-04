@@ -2,7 +2,7 @@
 //  PaywallView.swift
 //  Lume
 //
-//  TeamPlay Premium paywall: 30-day free trial framing + a single lifetime
+//  Tinika TV Premium paywall: 30-day free trial framing + a single lifetime
 //  non-consumable. No subscriptions, no auto-renewal copy. Presented as a sheet
 //  when a gated feature is hit or from Settings. Never shown in sideloaded builds.
 //
@@ -90,7 +90,7 @@ struct PaywallView: View {
                     .frame(maxWidth: 520)
                     .frame(maxWidth: .infinity)
                 }
-                .navigationTitle("TeamPlay Premium")
+                .navigationTitle("Tinika TV Premium")
                 #if os(iOS)
                     .navigationBarTitleDisplayMode(.inline)
                 #endif
@@ -132,7 +132,7 @@ struct PaywallView: View {
                 Image(systemName: "crown")
                     .font(.system(size: 44))
                     .foregroundStyle(.tint)
-                Text("TeamPlay Premium")
+                Text("Tinika TV Premium")
                     .font(.title.bold())
                     .multilineTextAlignment(.center)
                 Text(paywallHeadline)
@@ -227,7 +227,7 @@ struct PaywallView: View {
                         Image(systemName: "crown")
                             .font(.system(size: 56))
                             .foregroundStyle(.tint)
-                        Text("TeamPlay Premium")
+                        Text("Tinika TV Premium")
                             .font(.system(size: 48, weight: .bold))
                         Text(paywallHeadline)
                             .font(.system(size: 32, weight: .semibold))

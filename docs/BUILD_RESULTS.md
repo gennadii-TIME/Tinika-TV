@@ -1,17 +1,16 @@
-# Build results — multi-platform matrix (PR #6)
+# Build results — multi-platform matrix
 
-Branch: `cursor/teamplay-lume-base-8341` · Draft [PR #6](https://github.com/gennadii-TIME/TeamPlay/pull/6)  
-PR #4 stays unmerged.
+Branch: `main` · Repo: [gennadii-TIME/Tinika-TV](https://github.com/gennadii-TIME/Tinika-TV)
 
 ## Verification host (2026-09-25)
 
 | Item | Value |
 |---|---|
-| Host | **TeamPlay-Mac** (`uname`: Darwin 25.6.0 arm64, MacBook-Air-M5) |
+| Host | **Tinika-Mac** (`uname`: Darwin 25.6.0 arm64, MacBook-Air-M5) |
 | `xcodebuild -version` | **Xcode 27.0** (Build 27A266a) — meets Xcode 26.4+ requirement |
 | Shared SPM | `~/Library/Developer/Lume-SharedSPM` |
-| DerivedData | `/tmp/teamplay-dd-all` |
-| Local signing team used for device/mac builds | `7Q4F885549` (Tinika Ltd) via `TEAMPLAY_DEVELOPMENT_TEAM` |
+| DerivedData | `/tmp/tinika-dd-all` |
+| Local signing team used for device/mac builds | `7Q4F885549` (Tinika Ltd) via `TINIKA_DEVELOPMENT_TEAM` |
 
 ### SDKs present
 
@@ -36,13 +35,27 @@ See `LUME_UPSTREAM_COMMIT.txt` / `LUMEENGINE_UPSTREAM_COMMIT.txt`.
 `SUPPORTED_PLATFORMS = appletvos appletvsimulator iphoneos iphonesimulator macosx xros xrsimulator`  
 Deployment: **iOS/tvOS 18**, **macOS 15**, **visionOS 2**
 
-## Matrix
+## Rename verification (2026-10-04)
+
+After TeamPlay → Tinika TV branding (IDs unchanged), `./Scripts/build-all-platforms.sh`
+with `TINIKA_DERIVED_DATA=/tmp/tinika-dd-rename` on the same host:
+
+| Platform | Result |
+|---|---|
+| tvOS Simulator — Apple TV 4K (3rd generation) | ✅ OK |
+| iOS Simulator — iPhone 17 Pro | ✅ OK |
+| iOS Simulator — iPad Pro 13-inch (M5) | ✅ OK |
+| macOS | ✅ OK |
+
+Failed platforms: **0**. App Review was **not** submitted.
+
+## Matrix (earlier full pass)
 
 | Platform | Build | Add M3U | Play | Screenshot |
 |---|---|---|---|---|
-| Apple TV (tvOS Simulator 27 / Apple TV 4K 3rd gen) | ✅ | ⚠ launch OK; full M3U UI flow not automated on tvOS this run | ⚠ | ✅ `docs/screenshots/tvos_launch.jpg` |
+| Apple TV (tvOS Simulator 27 / Apple TV 4K 3rd gen) | ✅ | ⚠ launch OK; full M3U UI flow not automated on tvOS this run | ⚠ | ✅ `docs/screenshots/tvos_launch.jpg` / `tvos_home_tinika.png` |
 | iPhone (iOS Simulator 26.5 / iPhone 17 Pro) | ✅ | ✅ UI test `DemoHLSM3UFlowTests` | ✅ same UI test opens Live TV + player | ✅ `docs/screenshots/iphone_add_playlist.png`, `iphone_home.png` |
-| iPad (iPadOS / iPad Pro 13-inch M5) | ✅ | ⚠ launch OK; iPad UI-test runner hit sim launch denial under load | ⚠ | ✅ `docs/screenshots/ipad_launch.png` |
+| iPad (iPadOS / iPad Pro 13-inch M5) | ✅ | ⚠ launch OK; iPad UI-test runner hit sim launch denial under load | ⚠ | ✅ `docs/screenshots/ipad_launch.png` / `ipad_launch_tinika.png` |
 | Mac (macOS 27) | ✅ | ⚠ app launches with `-ui-testing` (CloudKit skip); Screen Recording permission blocked window screenshots from this agent | ⚠ | ⚠ see limitations |
 | Vision Pro (visionOS Simulator 27) | ✅ | ⚠ launch OK | ⚠ | ✅ `docs/screenshots/visionos_launch.jpg` |
 
@@ -50,8 +63,8 @@ Deployment: **iOS/tvOS 18**, **macOS 15**, **visionOS 2**
 
 ```bash
 # After installing MetalToolchain + tvOS/visionOS runtimes:
-export TEAMPLAY_DEVELOPMENT_TEAM=7Q4F885549
-export TEAMPLAY_MACOS_ENTITLEMENTS="$PWD/Scripts/macos-local-entitlements.plist"
+export TINIKA_DEVELOPMENT_TEAM=7Q4F885549
+export TINIKA_MACOS_ENTITLEMENTS="$PWD/Scripts/macos-local-entitlements.plist"
 ./Scripts/build-all-platforms.sh
 ```
 
@@ -66,7 +79,7 @@ macOS needs the sandbox-only entitlements override because the checked-in `Lume.
 cd LumeUITests/Fixtures && python3 -m http.server 8766 --bind 127.0.0.1
 xcodebuild test -project Lume.xcodeproj -scheme Lume \
   -clonedSourcePackagesDirPath ~/Library/Developer/Lume-SharedSPM \
-  -derivedDataPath /tmp/teamplay-dd-uitest \
+  -derivedDataPath /tmp/tinika-dd-uitest \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -only-testing:LumeUITests/DemoHLSM3UFlowTests/testAddDemoHLSPlaylistAndPlayLiveChannel \
   -allowProvisioningUpdates DEVELOPMENT_TEAM=7Q4F885549

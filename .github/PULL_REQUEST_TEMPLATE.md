@@ -1,5 +1,5 @@
 <!--
-Thanks for contributing to Lume! Please read CONTRIBUTING.md if you haven't yet.
+Thanks for contributing to Tinika TV! Please read CONTRIBUTING.md if you haven't yet.
 Keep PRs focused and single-purpose. Fill out the sections below.
 -->
 
@@ -28,6 +28,7 @@ Closes #
 - [ ] iOS / iPadOS
 - [ ] macOS
 - [ ] tvOS
+- [ ] visionOS
 
 ## Screenshots / recordings
 
@@ -39,6 +40,6 @@ Closes #
 - [ ] My commits follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
 - [ ] Pre-commit hooks pass (SwiftFormat, SwiftLint `--strict`, String Catalog normalization).
 - [ ] The test suite passes (`LumeTests` + `LumeUITests` on at least the iOS simulator).
-- [ ] New/changed user-facing text is localized in **both** `en` and `de`.
+- [ ] New/changed user-facing text is localized.
 - [ ] I added or updated tests covering my change where it makes sense.
 - [ ] My change contains no credentials, stream URLs, or other content.

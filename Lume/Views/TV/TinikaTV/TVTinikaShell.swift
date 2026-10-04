@@ -1,5 +1,5 @@
 //
-//  TVTeamPlayShell.swift
+//  TVTinikaShell.swift
 //  Lume
 //
 //  tvOS root replacing the standard TabView: main menu, 4-pane channel browser,
@@ -11,7 +11,7 @@
     import SwiftData
     import SwiftUI
 
-    struct TVTeamPlayShell: View {
+    struct TVTinikaShell: View {
         let onRequestPlaylistSync: (Playlist) -> Void
 
         @Environment(\.modelContext) private var modelContext
@@ -146,7 +146,7 @@
                 // teardown has yielded so ↑/↓ is not competing with the save.
                 guard previous != nil, current == nil else { return }
                 NotificationCenter.default.post(
-                    name: .teamPlayPlaybackDidDismiss, object: nil
+                    name: .tinikaPlaybackDidDismiss, object: nil
                 )
             }
             .overlay {
@@ -410,9 +410,9 @@
     }
 
     extension Notification.Name {
-        /// Posted when TeamPlay dismisses the full-screen player so the channel
+        /// Posted when Tinika TV dismisses the full-screen player so the channel
         /// browser can refresh recents after teardown yields.
-        static let teamPlayPlaybackDidDismiss = Notification.Name("lume.teamPlayPlaybackDidDismiss")
+        static let tinikaPlaybackDidDismiss = Notification.Name("tinika.playbackDidDismiss")
     }
 
 #endif

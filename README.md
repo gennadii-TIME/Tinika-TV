@@ -1,13 +1,14 @@
-# TeamPlay
+# Tinika TV
 
 IPTV for **Apple TV, iPhone, iPad, Mac, and Vision Pro** — based on the full
-[Lume](https://github.com/bilipp/Lume) codebase (AGPL-3.0), with TeamPlay branding.
+[Lume](https://github.com/bilipp/Lume) codebase (AGPL-3.0), with Tinika TV branding.
 
-Plan: [`docs/PRODUCT_PLAN.md`](docs/PRODUCT_PLAN.md).
+![Tinika TV](docs/screenshots/everywhere_tinika.png)
 
-> **PR #4** (single borrowed M3U parser) does **not** satisfy the plan and must
-> **not** be merged. This branch vendors Lume + LumeEngine for **all five**
-> platforms in the first PR.
+- Site: <https://gennadii-time.github.io/Tinika-TV/>
+- Privacy: <https://gennadii-time.github.io/Tinika-TV/privacy.html>
+- Support: <support@tinika.lv>
+- Plan: [`docs/PRODUCT_PLAN.md`](docs/PRODUCT_PLAN.md)
 
 ## Requirements
 
@@ -24,7 +25,7 @@ Details: [`docs/BUILD_REQUIREMENTS.md`](docs/BUILD_REQUIREMENTS.md).
 ## Run (Mac)
 
 ```bash
-open Lume.xcodeproj   # scheme Lume → display name TeamPlay
+open Lume.xcodeproj   # scheme Lume → display name Tinika TV
 ./Scripts/build-all-platforms.sh
 ```
 

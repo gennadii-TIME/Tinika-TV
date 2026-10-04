@@ -16,7 +16,7 @@ enum LiveChannelFavorites {
     /// without waiting for the next `onAppear`.
     static let didChangeNotification = Notification.Name("lume.liveChannelFavorites.didChange")
 
-    /// Legacy UserDefaults key used by early TeamPlay builds that stored bare
+    /// Legacy UserDefaults key used by early Tinika TV builds that stored bare
     /// `streamId` integers (not playlist-scoped catalog ids).
     static let legacyStreamIDKey = "tp.favorites.streamIds"
 

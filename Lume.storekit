@@ -20,13 +20,13 @@
       "internalID" : "5001",
       "localizations" : [
         {
-          "description" : "Unlock every TeamPlay Premium feature forever with a single payment.",
-          "displayName" : "TeamPlay Premium (Lifetime)",
+          "description" : "Unlock every Tinika TV Premium feature forever with a single payment.",
+          "displayName" : "Tinika TV Premium (Lifetime)",
           "locale" : "en_US"
         }
       ],
       "productID" : "time.teamplay.premium.lifetime",
-      "referenceName" : "TeamPlay Premium Lifetime",
+      "referenceName" : "Tinika TV Premium Lifetime",
       "type" : "NonConsumable"
     }
   ],

@@ -140,7 +140,7 @@ import SwiftUI
                             .background(.tint.opacity(0.12), in: .rect(cornerRadius: 14, style: .continuous))
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("TeamPlay")
+                            Text("Tinika TV")
                                 .font(.system(size: 26, weight: .semibold))
                             Text("Version \(SupportInfo.appVersion)")
                                 .font(.system(size: 20))
@@ -166,7 +166,7 @@ import SwiftUI
             VStack(alignment: .leading, spacing: 16) {
                 TVSettingsSectionLabel("Acknowledgements")
 
-                Text("TeamPlay is based on Lume and is free, open-source software, licensed under the GNU Affero General Public License v3.")
+                Text("Tinika TV is based on Lume and is free, open-source software, licensed under the GNU Affero General Public License v3.")
                     .font(.system(size: 22))
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, TVSettingsMetrics.rowHPadding)

@@ -48,9 +48,9 @@
                     }
                 }
             } header: {
-                Text("TeamPlay")
+                Text("Tinika TV")
             } footer: {
-                Text("TeamPlay is based on Lume and is free, open-source software, licensed under the GNU Affero General Public License v3. Lume authorship and licence notices are preserved.")
+                Text("Tinika TV is based on Lume and is free, open-source software, licensed under the GNU Affero General Public License v3. Lume authorship and licence notices are preserved.")
             }
         }
 
@@ -62,7 +62,7 @@
             } header: {
                 Text("Open Source")
             } footer: {
-                Text("TeamPlay’s playback engines build on these open-source projects. Each remains under its own license.")
+                Text("Tinika TV’s playback engines build on these open-source projects. Each remains under its own license.")
             }
         }
 

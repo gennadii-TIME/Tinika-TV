@@ -267,7 +267,7 @@
                         .font(.system(size: 14, weight: .bold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(TVTeamPlayFocus.archiveAmber.opacity(0.9), in: Capsule())
+                        .background(TVTinikaFocus.archiveAmber.opacity(0.9), in: Capsule())
                         .accessibilityLabel("Archive")
                 }
 

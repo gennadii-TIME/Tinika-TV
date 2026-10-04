@@ -11,12 +11,12 @@ import SwiftUI
 
 @main
 struct LumeApp: App {
-    /// Future TeamPlay CloudKit container id (register in Developer portal before
+    /// Future Tinika TV CloudKit container id (register in Developer portal before
     /// flipping `isCloudKitSyncConfigured`). Must never point at upstream
     /// `iCloud.bilipp.Lume`.
     static let cloudKitContainerIdentifier = "iCloud.lv.tinika.teamplay"
 
-    /// CloudKit sync stays off until the TeamPlay iCloud container and
+    /// CloudKit sync stays off until the Tinika TV iCloud container and
     /// entitlements are provisioned. With this false, both stores use
     /// `cloudKitDatabase: .none` and `CloudSyncCoordinator` skips every
     /// `CKContainer` call — so Mac/iOS/tvOS launch without `-ui-testing` or a
@@ -162,7 +162,7 @@ struct LumeApp: App {
     /// un-entitled id. In those contexts we skip CloudKit entirely: the user-data
     /// store stays local and the reconcile engine still runs (just no sync).
     ///
-    /// TeamPlay also keeps sync off until `isCloudKitSyncConfigured` is flipped
+    /// Tinika TV also keeps sync off until `isCloudKitSyncConfigured` is flipped
     /// after a real `iCloud.lv.tinika.teamplay` container is registered — so
     /// everyday Debug launches (including macOS) do not need `-ui-testing` or a
     /// temporary entitlements override.

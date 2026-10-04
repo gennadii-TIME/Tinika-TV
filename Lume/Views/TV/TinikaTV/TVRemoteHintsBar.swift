@@ -2,7 +2,7 @@
 //  TVRemoteHintsBar.swift
 //  Lume
 //
-//  Bottom-of-screen Siri Remote hints for the TeamPlay tvOS shell. Labels are
+//  Bottom-of-screen Siri Remote hints for the Tinika TV tvOS shell. Labels are
 //  localized keys — Russian comes from Localizable.xcstrings when the Apple TV
 //  language is Russian.
 //

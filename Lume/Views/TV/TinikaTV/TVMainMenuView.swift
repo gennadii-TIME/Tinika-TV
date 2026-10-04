@@ -2,7 +2,7 @@
 //  TVMainMenuView.swift
 //  Lume
 //
-//  TeamPlay main menu: left glass panel matching TVTeam layout — branding,
+//  Tinika TV main menu: left glass panel matching TVTeam layout — branding,
 //  profile/playlist, optional Premium status line, and seven focusable rows with
 //  solid blue focus. Focus is restored via `focusedAction` when returning.
 //
@@ -85,7 +85,7 @@
                                 endPoint: .bottomTrailing
                             )
                         )
-                    Text("TeamPlay")
+                    Text("Tinika TV")
                         .font(.system(size: 36, weight: .bold))
                         .foregroundStyle(.white)
                 }
@@ -176,7 +176,7 @@
                             .font(.system(size: 20))
                             .foregroundStyle(.white.opacity(0.7))
                         ProgressView(value: epgService.isSyncing ? max(0.05, epgService.progress) : 1)
-                            .tint(TVTeamPlayFocus.liveGreen)
+                            .tint(TVTinikaFocus.liveGreen)
                             .frame(maxWidth: 280)
                     }
 

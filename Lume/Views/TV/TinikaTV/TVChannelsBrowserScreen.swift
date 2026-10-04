@@ -2,7 +2,7 @@
 //  TVChannelsBrowserScreen.swift
 //  Lume
 //
-//  TeamPlay four-pane channel browser: icon rail | categories | channels |
+//  Tinika TV four-pane channel browser: icon rail | categories | channels |
 //  programme preview. Selection and scroll position are restored via
 //  initialRailID / initialChannelID when returning from the guide or player.
 //
@@ -184,7 +184,7 @@
             .onReceive(NotificationCenter.default.publisher(for: LiveChannelFavorites.didChangeNotification)) { _ in
                 rebuildIndex()
             }
-            .onReceive(NotificationCenter.default.publisher(for: .teamPlayPlaybackDidDismiss)) { _ in
+            .onReceive(NotificationCenter.default.publisher(for: .tinikaPlaybackDidDismiss)) { _ in
                 // Delay past player teardown / progress merge so category ↑/↓
                 // stays on the warm in-memory index first.
                 postPlaybackRefreshTask?.cancel()
@@ -416,7 +416,7 @@
                                     .font(.system(size: 12, weight: .bold))
                                     .padding(.horizontal, 7)
                                     .padding(.vertical, 2)
-                                    .background(TVTeamPlayFocus.archiveAmber.opacity(0.95), in: Capsule())
+                                    .background(TVTinikaFocus.archiveAmber.opacity(0.95), in: Capsule())
                             }
                         }
                         if let now {
@@ -424,7 +424,7 @@
                                 .font(.system(size: 17))
                                 .foregroundStyle(
                                     focusedChannelID == channel.id
-                                        ? TVTeamPlayFocus.liveGreen
+                                        ? TVTinikaFocus.liveGreen
                                         : .white.opacity(0.55)
                                 )
                                 .lineLimit(1)
@@ -435,7 +435,7 @@
                                 .font(.system(size: 15))
                                 .foregroundStyle(.white.opacity(0.45))
                                 ProgressView(value: progress(for: now))
-                                    .tint(TVTeamPlayFocus.blue)
+                                    .tint(TVTinikaFocus.blue)
                                     .frame(width: 80)
                             }
                         }
@@ -492,10 +492,10 @@
                             "\(now.start.formatted(date: .omitted, time: .shortened)) – \(now.end.formatted(date: .omitted, time: .shortened))"
                         )
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(TVTeamPlayFocus.blue)
+                        .foregroundStyle(TVTinikaFocus.blue)
 
                         ProgressView(value: progress(for: now))
-                            .tint(TVTeamPlayFocus.blue)
+                            .tint(TVTinikaFocus.blue)
 
                         if !now.listingDescription.isEmpty {
                             Text(now.listingDescription)
@@ -513,7 +513,7 @@
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Next")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(TVTeamPlayFocus.blue)
+                                .foregroundStyle(TVTinikaFocus.blue)
                             Text(next.title)
                                 .font(.system(size: 20, weight: .medium))
                                 .foregroundStyle(.white.opacity(0.85))
@@ -578,13 +578,13 @@
                     .font(.system(size: 16, weight: .bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(TVTeamPlayFocus.archiveAmber, in: Capsule())
+                    .background(TVTinikaFocus.archiveAmber, in: Capsule())
             } else {
                 Text("Live")
                     .font(.system(size: 16, weight: .bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(TVTeamPlayFocus.liveRed, in: Capsule())
+                    .background(TVTinikaFocus.liveRed, in: Capsule())
             }
         }
 

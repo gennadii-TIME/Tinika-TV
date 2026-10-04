@@ -9,8 +9,8 @@
 //  URLs are verbatim data; the surrounding descriptive copy is localised in the
 //  views (the same split as SupportInfo).
 //
-//  Modified for TeamPlay: 2026-09-25 — attribute Lume (AGPL), LumeEngine (MIT)
-//  and FFmpeg (LGPL) accurately; TeamPlay distribution source URL.
+//  Modified for Tinika TV: 2026-09-25 — attribute Lume (AGPL), LumeEngine (MIT)
+//  and FFmpeg (LGPL) accurately; Tinika TV distribution source URL.
 //
 
 import Foundation
@@ -42,7 +42,7 @@ nonisolated enum CreditsInfo {
         }
     }
 
-    /// Playback engines and the media stack they bundle. TeamPlay (derived from
+    /// Playback engines and the media stack they bundle. Tinika TV (derived from
     /// Lume) is licensed under the GNU AGPL v3 (see `sourceCodeURL` /
     /// `licenseURL`); these are the third-party components whose licences
     /// require acknowledgement.
@@ -94,13 +94,13 @@ nonisolated enum CreditsInfo {
         URL(string: introDB)
     }
 
-    // MARK: - TeamPlay / Lume
+    // MARK: - Tinika TV / Lume
 
-    /// TeamPlay distributes under AGPL because it is derived from Lume.
+    /// Tinika TV distributes under AGPL because it is derived from Lume.
     static let licenseName = "GNU AGPL v3"
-    /// TeamPlay distribution source (AGPL). Upstream Lume remains credited in NOTICE.
-    static let sourceCode = "https://github.com/gennadii-TIME/TeamPlay"
-    static let licenseURLString = "https://github.com/gennadii-TIME/TeamPlay/blob/main/LICENSE"
+    /// Tinika TV distribution source (AGPL). Upstream Lume remains credited in NOTICE.
+    static let sourceCode = "https://github.com/gennadii-TIME/Tinika-TV"
+    static let licenseURLString = "https://github.com/gennadii-TIME/Tinika-TV/blob/main/LICENSE"
     static let basedOnLume = "https://github.com/bilipp/Lume"
 
     static var sourceCodeURL: URL? {

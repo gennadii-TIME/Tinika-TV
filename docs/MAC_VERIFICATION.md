@@ -2,7 +2,7 @@
 
 Run this in **Cursor on your Mac** (not Linux Cloud).
 
-1. Open the TeamPlay repo → branch `cursor/teamplay-lume-base-8341` → pull / merge `origin/main`.
+1. Open the Tinika TV repo → branch `main` → pull latest.
 2. Confirm toolchain:
    - `xcodebuild -version` → need **26.4+**
    - `xcodebuild -showsdks` and `xcrun simctl list devices available`

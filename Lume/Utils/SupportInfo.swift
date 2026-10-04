@@ -7,26 +7,25 @@
 //  since Apple TV can't open a URL itself). One source of truth so the two
 //  surfaces can never drift.
 //
-//  Modified for TeamPlay: 2026-09-25 — removed upstream Lume Discord / App Store
-//  review links; website points at the TeamPlay repository.
+//  Modified for Tinika TV: 2026-10-04 — website, privacy and support point at
+//  the Tinika-TV repository and GitHub Pages.
 //
 
 import Foundation
 
 nonisolated enum SupportInfo {
-    static let website = "https://github.com/gennadii-TIME/TeamPlay"
+    static let website = "https://gennadii-time.github.io/Tinika-TV/"
     static let email = "support@tinika.lv"
 
     /// Public privacy policy. Source of truth in-repo: `docs/PRIVACY.md` (+ `docs/privacy.html`).
-    /// Gist URL is used so App Store / paywall always hit a live public page (tinika.lv/teamplay/privacy is 404).
-    static let privacyPolicy = "https://gist.github.com/gennadii-TIME/d89f0aa030eb0c076a53f072de93817e"
+    static let privacyPolicy = "https://gennadii-time.github.io/Tinika-TV/privacy.html"
 
-    /// App Store listing placeholders until TeamPlay ships its own listing.
-    static let appStore = "https://github.com/gennadii-TIME/TeamPlay"
-    static let appStoreReview = "https://github.com/gennadii-TIME/TeamPlay"
+    /// App Store listing placeholders until Tinika TV ships its own listing.
+    static let appStore = "https://github.com/gennadii-TIME/Tinika-TV"
+    static let appStoreReview = "https://github.com/gennadii-TIME/Tinika-TV"
 
     /// Scheme-stripped forms for compact on-screen display.
-    static let websiteDisplay = "github.com/gennadii-TIME/TeamPlay"
+    static let websiteDisplay = "tinika.tv"
     static let appStoreDisplay = "GitHub"
 
     static var websiteURL: URL? {

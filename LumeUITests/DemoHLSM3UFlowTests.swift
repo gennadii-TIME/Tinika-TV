@@ -17,7 +17,7 @@ final class DemoHLSM3UFlowTests: XCTestCase {
     private let playlistName = "Demo HLS"
     private let playlistURLCandidates = [
         "http://127.0.0.1:8766/demo.m3u",
-        "https://raw.githubusercontent.com/gennadii-TIME/TeamPlay/cursor/teamplay-lume-base-8341/LumeUITests/Fixtures/demo.m3u",
+        "https://raw.githubusercontent.com/gennadii-TIME/Tinika-TV/main/LumeUITests/Fixtures/demo.m3u",
     ]
 
     override func setUpWithError() throws {
@@ -57,8 +57,8 @@ final class DemoHLSM3UFlowTests: XCTestCase {
         XCTAssertTrue(app.scrollUntilExists(addButton), "Add Playlist row not found")
         addButton.tap()
 
-        if app.staticTexts["Unlock TeamPlay Premium"].waitForExistence(timeout: 3)
-            || app.navigationBars["TeamPlay Premium"].waitForExistence(timeout: 1) {
+        if app.staticTexts["Unlock Tinika TV Premium"].waitForExistence(timeout: 3)
+            || app.navigationBars["Tinika TV Premium"].waitForExistence(timeout: 1) {
             XCTFail("Add Playlist opened the paywall instead of the M3U form")
         }
     }

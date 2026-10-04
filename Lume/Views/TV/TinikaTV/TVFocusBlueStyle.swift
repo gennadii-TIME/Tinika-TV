@@ -2,7 +2,7 @@
 //  TVFocusBlueStyle.swift
 //  Lume
 //
-//  Shared tvOS focus chrome for the TeamPlay shell: solid blue fill under focus
+//  Shared tvOS focus chrome for the Tinika TV shell: solid blue fill under focus
 //  (matching the TVTeam Player reference), with a quieter selected fill when
 //  the row is active but unfocused.
 //
@@ -11,8 +11,8 @@
 
     import SwiftUI
 
-    /// Focus fill used across TeamPlay menus, channel rows, EPG days and chips.
-    enum TVTeamPlayFocus {
+    /// Focus fill used across Tinika TV menus, channel rows, EPG days and chips.
+    enum TVTinikaFocus {
         static let blue = Color(red: 0.0, green: 0.42, blue: 1.0)
         static let liveGreen = Color(red: 0.2, green: 0.85, blue: 0.35)
         static let archiveAmber = Color(red: 1.0, green: 0.72, blue: 0.15)
@@ -50,7 +50,7 @@
             }
 
             private var fill: Color {
-                if isFocused { return TVTeamPlayFocus.blue }
+                if isFocused { return TVTinikaFocus.blue }
                 if isSelected { return Color.white.opacity(0.14) }
                 return Color.clear
             }
@@ -82,7 +82,7 @@
             }
 
             private var fill: Color {
-                if isFocused { return TVTeamPlayFocus.blue }
+                if isFocused { return TVTinikaFocus.blue }
                 if isSelected { return Color.white.opacity(0.18) }
                 return Color.white.opacity(0.08)
             }

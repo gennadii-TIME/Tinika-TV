@@ -1,4 +1,4 @@
-# Build requirements — Lume-based TeamPlay (all Apple platforms)
+# Build requirements — Lume-based Tinika TV (all Apple platforms)
 
 First PR scope (PRODUCT_PLAN): **one** Lume-based tree that builds for
 
@@ -34,11 +34,11 @@ chmod +x Scripts/build-all-platforms.sh
 ./Scripts/build-all-platforms.sh
 ```
 
-Or per destination with scheme `Lume` (display name **TeamPlay**):
+Or per destination with scheme `Lume` (display name **Tinika TV**):
 
 ```bash
 SPM=(-clonedSourcePackagesDirPath ~/Library/Developer/Lume-SharedSPM)
-DD=(-derivedDataPath /tmp/teamplay-dd)
+DD=(-derivedDataPath /tmp/tinika-dd)
 
 xcodebuild build -project Lume.xcodeproj -scheme Lume "${SPM[@]}" "${DD[@]}" \
   -destination 'platform=tvOS Simulator,name=Apple TV 4K'
@@ -59,4 +59,4 @@ PR #4 (parser-only) does **not** meet this bar and must stay unmerged.
 
 ## Cloud limitation
 
-Linux Cloud agents cannot run these builds. A Mac with Xcode 26.4+ (or a private worker that includes the **TeamPlay** repo) is required. Record outcomes in `docs/BUILD_RESULTS.md`.
+Linux Cloud agents cannot run these builds. A Mac with Xcode 26.4+ (or a private worker that includes the **Tinika TV** repo) is required. Record outcomes in `docs/BUILD_RESULTS.md`.

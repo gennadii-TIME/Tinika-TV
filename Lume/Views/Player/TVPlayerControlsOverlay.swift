@@ -413,7 +413,7 @@
                     VStack(alignment: .trailing, spacing: 4) {
                         Text("Next")
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(TVTeamPlayFocus.blue)
+                            .foregroundStyle(TVTinikaFocus.blue)
                         Text(next.title)
                             .font(.system(size: 22, weight: .semibold))
                             .foregroundStyle(.white)
@@ -540,7 +540,7 @@
                             VStack(alignment: .trailing, spacing: 4) {
                                 Text("Next")
                                     .font(.system(size: 20, weight: .semibold))
-                                    .foregroundStyle(TVTeamPlayFocus.blue)
+                                    .foregroundStyle(TVTinikaFocus.blue)
                                 Text(next.title)
                                     .font(.system(size: 22, weight: .medium))
                                     .foregroundStyle(.white.opacity(0.85))
@@ -572,13 +572,13 @@
                         .font(.system(size: 20, weight: .bold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .background(TVTeamPlayFocus.archiveAmber, in: Capsule())
+                        .background(TVTinikaFocus.archiveAmber, in: Capsule())
                 } else if media.isCatchup {
                     Text("Archive")
                         .font(.system(size: 20, weight: .bold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 6)
-                        .background(TVTeamPlayFocus.archiveAmber, in: Capsule())
+                        .background(TVTinikaFocus.archiveAmber, in: Capsule())
                 } else if media.isLive {
                     HStack(spacing: 6) {
                         Circle()
@@ -589,7 +589,7 @@
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
-                    .background(TVTeamPlayFocus.liveRed, in: Capsule())
+                    .background(TVTinikaFocus.liveRed, in: Capsule())
                 }
                 if timedMute.isMuted, let label = timedMute.remainingLabel {
                     Label(label, systemImage: "speaker.slash.fill")
@@ -1280,7 +1280,7 @@
                         if let previewDeltaLabel {
                             Text(verbatim: previewDeltaLabel)
                                 .font(.system(size: 28, weight: .semibold).monospacedDigit())
-                                .foregroundStyle(TVTeamPlayFocus.blue)
+                                .foregroundStyle(TVTinikaFocus.blue)
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -1443,14 +1443,14 @@
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(
                                     isFocused || isScrubbing
-                                        ? TVTeamPlayFocus.blue.opacity(0.22)
+                                        ? TVTinikaFocus.blue.opacity(0.22)
                                         : .clear
                                 )
                         )
                         .overlay {
                             RoundedRectangle(cornerRadius: 16)
                                 .strokeBorder(
-                                    isFocused || isScrubbing ? TVTeamPlayFocus.blue : .clear,
+                                    isFocused || isScrubbing ? TVTinikaFocus.blue : .clear,
                                     lineWidth: 3
                                 )
                                 .allowsHitTesting(false)
@@ -1506,14 +1506,14 @@
                         .fill(.white.opacity(compactStyle ? 0.22 : 0.28))
                         .frame(height: trackHeight)
                     Capsule()
-                        .fill(compactStyle || active ? TVTeamPlayFocus.blue : Color.white)
+                        .fill(compactStyle || active ? TVTinikaFocus.blue : Color.white)
                         .frame(width: max(fillWidth, 0), height: trackHeight)
                     if knobSize > 0 {
                         Circle()
                             .fill(.white)
                             .overlay(
                                 Circle().strokeBorder(
-                                    compactStyle ? Color.clear : TVTeamPlayFocus.blue,
+                                    compactStyle ? Color.clear : TVTinikaFocus.blue,
                                     lineWidth: compactStyle ? 0 : 3
                                 )
                             )

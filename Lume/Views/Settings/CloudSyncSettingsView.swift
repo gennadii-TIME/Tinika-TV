@@ -57,7 +57,7 @@ enum CloudSyncStatusText {
         if LumeApp.isCloudKitSyncConfigured {
             "Your playlists, watch progress, favorites and watchlist sync across your devices through your private iCloud account. The video catalog itself is fetched on each device and isn’t uploaded."
         } else {
-            "iCloud sync is not enabled in this TeamPlay build. Playlists, progress and favorites stay on this device until a TeamPlay iCloud container is registered."
+            "iCloud sync is not enabled in this Tinika TV build. Playlists, progress and favorites stay on this device until a Tinika TV iCloud container is registered."
         }
     }
 }
