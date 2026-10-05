@@ -110,6 +110,9 @@ final class PlayerMediaSwapper {
         /// latest pending target (last channel wins); the previous in-flight
         /// decoder load is superseded when `activeMedia` changes. A ring cursor
         /// keeps follow-up presses to a single-row fetch instead of a bisect.
+        ///
+        /// Successful ↑/↓ never call `showControls` — clean-screen surfing must
+        /// leave the OSD hidden (`TVChannelSurfChromePolicy`).
         func surf(
             _ direction: MoveCommandDirection,
             from media: PlayableMedia,
@@ -140,7 +143,12 @@ final class PlayerMediaSwapper {
                     cursor: &surfCursor,
                     in: lookup.context
                 )
-                guard let target else { showControls(); return }
+                guard let target else {
+                    if TVChannelSurfChromePolicy.shouldShowControlsWhenVerticalSurfUnavailable() {
+                        showControls()
+                    }
+                    return
+                }
 
                 let gen = ChannelSwitchDiagnostics.beginPress(channelTitle: target.title)
                 ChannelSwitchDiagnostics.noteChannelSelected(generation: gen)
@@ -149,7 +157,9 @@ final class PlayerMediaSwapper {
                 // Selecting immediately updates title/logo and replaces any
                 // in-flight stream load for the previous press (last wins).
                 select(target)
-                showControls()
+                if TVChannelSurfChromePolicy.shouldShowControlsAfterSuccessfulVerticalSurf() {
+                    showControls()
+                }
             case .right:
                 let target = LiveChannelHistory.recallMedia(
                     in: lookup.context, scope: media.channelScope, restriction: lookup.restriction

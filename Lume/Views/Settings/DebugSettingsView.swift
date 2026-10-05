@@ -89,8 +89,11 @@ extension SettingsView {
             .sheet(item: $mailItem) { item in
                 MailComposeView(
                     recipient: SupportInfo.email,
-                    subject: String(localized: "Tinika TV Diagnostics — \(SupportInfo.appVersion)"),
-                    body: String(localized: "Describe the problem here. The diagnostic log is attached.\n\n"),
+                    subject: AppInterfaceLanguage.localizedFormat(
+                        "Tinika TV Diagnostics — %@",
+                        SupportInfo.appVersion
+                    ),
+                    body: AppInterfaceLanguage.localized("Describe the problem here. The diagnostic log is attached.\n\n"),
                     attachmentURL: item.url
                 )
                 .ignoresSafeArea()
@@ -217,7 +220,7 @@ extension SettingsView {
             .task {
                 let metadata = DebugLogExporter.currentMetadata()
                 text = await (try? DebugLogExporter(metadata: metadata).makeReport())
-                    ?? String(localized: "Couldn't read the logs.")
+                    ?? AppInterfaceLanguage.localized("Couldn't read the logs.")
                 isLoading = false
             }
         }

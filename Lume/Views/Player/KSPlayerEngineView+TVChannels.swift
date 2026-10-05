@@ -92,9 +92,18 @@
             case .down: surfDirection = .down
             default: return
             }
-            // Heal a stuck `.controls` phase after OSD already hid (missed
-            // noteControlsClosed) so surfing is not permanently blocked.
-            if !isControlsVisible, controlSession.phase == .controls {
+            // OSD-visible ↑/↓: cancel scrub/seek before the gate so a twin that
+            // only hit the window observer can still surf (overlay MoveCommand
+            // already prepared; prepare is idempotent).
+            if isControlsVisible {
+                TVScrubArrowInput.shared.forceStop(scheduleCommit: false)
+                _ = controlSession.prepareChannelSurfWhileOSDVisible(
+                    mediaIsCatchup: media.isCatchup
+                )
+                resetHideTimer()
+            } else if controlSession.phase == .controls {
+                // Heal a stuck `.controls` phase after OSD already hid (missed
+                // noteControlsClosed) so surfing is not permanently blocked.
                 controlSession.noteControlsClosed(mediaIsCatchup: media.isCatchup)
             }
             let gate = TVChannelSurfGate(

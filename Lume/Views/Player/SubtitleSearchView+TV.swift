@@ -124,7 +124,12 @@
                     .focusSection()
 
                     if let remaining = service.remainingDownloads {
-                        Text("\(remaining) downloads left today.")
+                        Text(
+                            String(
+                                format: String(localized: "%lld downloads left today."),
+                                remaining
+                            )
+                        )
                             .tvSettingsSecondaryText()
                             .padding(.top, 4)
                     }
@@ -170,7 +175,12 @@
                 if isDownloading {
                     ProgressView()
                 } else {
-                    Text("\(subtitle.downloadCount) downloads")
+                    Text(
+                        String(
+                            format: String(localized: "%lld downloads"),
+                            subtitle.downloadCount
+                        )
+                    )
                         .font(.system(size: 20))
                         .opacity(0.5)
                         .layoutPriority(1)

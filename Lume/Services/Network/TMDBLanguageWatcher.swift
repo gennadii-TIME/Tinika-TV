@@ -2,13 +2,9 @@
 //  TMDBLanguageWatcher.swift
 //  Lume
 //
-//  Detects when the user's preferred language (system or per-app override)
-//  changes between launches and invalidates cached TMDB enrichment so detail
-//  views re-fetch text, videos and artwork in the new language.
-//
-//  There is deliberately no in-app language picker — Lume relies on the
-//  per-app language override in iOS Settings, which relaunches the app when
-//  changed, giving us a launch hook to react to.
+//  Detects when the in-app interface language changes between launches and
+//  invalidates cached TMDB enrichment so detail views re-fetch text, videos
+//  and artwork in the new language.
 //
 
 import Foundation

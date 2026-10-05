@@ -101,13 +101,14 @@ nonisolated enum TrackLanguageMatcher {
         return codes(inFreeText: trimmed).first
     }
 
-    /// The language in the viewer's own language, falling back to the raw code
-    /// for regional variants (`pt-br`, `zh-cn`) the system doesn't name.
+    /// The language in the viewer's chosen app language, falling back to the
+    /// raw code for regional variants (`pt-br`, `zh-cn`) the system doesn't name.
     static func displayName(for code: String) -> String {
-        if let name = Locale.current.localizedString(forIdentifier: code) {
+        let locale = AppInterfaceLanguage.current.locale
+        if let name = locale.localizedString(forIdentifier: code) {
             return name
         }
-        if let name = Locale.current.localizedString(forLanguageCode: code) {
+        if let name = locale.localizedString(forLanguageCode: code) {
             return name
         }
         return code.uppercased()

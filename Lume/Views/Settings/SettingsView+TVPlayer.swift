@@ -140,7 +140,7 @@ import SwiftUI
                     TVOptionCycleRow(
                         title: "External Player",
                         valueLabel: ExternalPlayer(rawValue: externalPlayerRaw)?.displayName
-                            ?? String(localized: "Off")
+                            ?? AppInterfaceLanguage.localized("Off")
                     ) {
                         externalPlayerRaw = nextExternalPlayerRaw(after: externalPlayerRaw)
                     }

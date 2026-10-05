@@ -90,9 +90,8 @@ struct MultiViewTile: View {
 
     private var accessibilityLabel: Text {
         guard let media = slot.media else { return Text("Empty tile") }
-        return hasAudio
-            ? Text("\(media.title), playing audio")
-            : Text("\(media.title), muted")
+        let format = String(localized: hasAudio ? "%@, playing audio" : "%@, muted")
+        return Text(String(format: format, media.title))
     }
 
     /// Only a rail tile needs one: everywhere else the tile's own label already

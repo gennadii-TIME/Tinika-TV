@@ -28,7 +28,7 @@ enum VLCDecodeThreads: Int, CaseIterable, Identifiable {
     }
 
     var label: String {
-        self == .auto ? String(localized: "Automatic") : "\(rawValue)"
+        self == .auto ? AppInterfaceLanguage.localized("Automatic") : "\(rawValue)"
     }
 }
 
@@ -82,7 +82,7 @@ enum VLCClockJitter: Int, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .auto: String(localized: "Default")
+        case .auto: AppInterfaceLanguage.localized("Default")
         case .off: "0 ms"
         default: "\(rawValue) ms"
         }
@@ -107,9 +107,9 @@ enum VLCClockSynchro: Int, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .automatic: String(localized: "Automatic")
-        case .disabled: String(localized: "Disabled")
-        case .enabled: String(localized: "Enabled")
+        case .automatic: AppInterfaceLanguage.localized("Automatic")
+        case .disabled: AppInterfaceLanguage.localized("Disabled")
+        case .enabled: AppInterfaceLanguage.localized("Enabled")
         }
     }
 }
@@ -195,9 +195,9 @@ enum LumeDeinterlaceMode: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .off: String(localized: "Off")
-        case .auto: String(localized: "Automatic")
-        case .always: String(localized: "Always")
+        case .off: AppInterfaceLanguage.localized("Off")
+        case .auto: AppInterfaceLanguage.localized("Automatic")
+        case .always: AppInterfaceLanguage.localized("Always")
         }
     }
 }
@@ -217,8 +217,8 @@ enum LumeDeinterlaceRate: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .field: String(localized: "Doubled")
-        case .frame: String(localized: "Original")
+        case .field: AppInterfaceLanguage.localized("Doubled")
+        case .frame: AppInterfaceLanguage.localized("Original")
         }
     }
 }
@@ -239,7 +239,7 @@ enum LumeVideoQueuePreset {
     static let values = [4, 8, 12, 16, 24]
 
     static func label(_ frames: Int) -> String {
-        String(localized: "\(frames) frames")
+        AppInterfaceLanguage.localizedFormat("%lld frames", frames)
     }
 }
 
@@ -250,7 +250,7 @@ enum LumeAudioQueuePreset {
     static let values = [24, 48, 96, 192]
 
     static func label(_ frames: Int) -> String {
-        String(localized: "\(frames) frames")
+        AppInterfaceLanguage.localizedFormat("%lld frames", frames)
     }
 }
 
@@ -287,7 +287,7 @@ enum LumeIOTimeout: Int, CaseIterable, Identifiable {
     }
 
     var label: String {
-        self == .off ? String(localized: "Off") : "\(rawValue) s"
+        self == .off ? AppInterfaceLanguage.localized("Off") : "\(rawValue) s"
     }
 }
 
@@ -313,7 +313,7 @@ enum LumeProbeSize: Int, CaseIterable, Identifiable {
     }
 
     var label: String {
-        self == .auto ? String(localized: "Default") : "\(rawValue) MB"
+        self == .auto ? AppInterfaceLanguage.localized("Default") : "\(rawValue) MB"
     }
 }
 
@@ -337,7 +337,7 @@ enum LumeAnalyzeDuration: Int, CaseIterable, Identifiable {
     }
 
     var label: String {
-        self == .auto ? String(localized: "Default") : "\(rawValue) s"
+        self == .auto ? AppInterfaceLanguage.localized("Default") : "\(rawValue) s"
     }
 }
 

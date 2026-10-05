@@ -187,9 +187,9 @@ struct ChannelManagementView: View {
 
         private var footerText: String {
             [
-                String(localized: "Hide channels to remove them from this category, or drag to reorder."),
-                String(localized: "Show All and Hide All apply to whatever the list is showing, so you can search first and bulk-apply to the matches."),
-                String(localized: "Reset restores the provider's order and shows everything.")
+                AppInterfaceLanguage.localized("Hide channels to remove them from this category, or drag to reorder."),
+                AppInterfaceLanguage.localized("Show All and Hide All apply to whatever the list is showing, so you can search first and bulk-apply to the matches."),
+                AppInterfaceLanguage.localized("Reset restores the provider's order and shows everything.")
             ].joined(separator: " ")
         }
     #endif
@@ -211,8 +211,11 @@ struct ChannelManagementView: View {
                         .foregroundStyle(isHidden ? Color.secondary : Color.accentColor)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(isHidden ? "Show \(title)" : "Hide \(title)")
-
+                .accessibilityLabel(
+                    isHidden
+                        ? AppInterfaceLanguage.localizedFormat("Show %@", title)
+                        : AppInterfaceLanguage.localizedFormat("Hide %@", title)
+                )
                 CachedAsyncImage(url: iconURL, maxPixelSize: 44) { phase in
                     switch phase {
                     case let .success(image):

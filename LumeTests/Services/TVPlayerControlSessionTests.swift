@@ -361,20 +361,63 @@ final class TVPlayerControlSessionTests: XCTestCase {
         XCTAssertEqual(session.noteScrubStep(direction: .left, absoluteTimeline: true), 0)
     }
 
-    func testScrubHoldAcceleratesOneThreeTenMinutes() {
+    func testScrubStepIsFixedTenSeconds() {
         let session = TVPlayerControlSession()
         session.noteControlsOpened(mediaIsCatchup: false)
         _ = session.beginScrub(absolute: Date(), windowStart: nil, playerTime: 0, isPlaying: true)
-        var steps: [TimeInterval] = []
         for _ in 0 ..< 10 {
-            steps.append(session.noteScrubStep(direction: .right, absoluteTimeline: true))
+            XCTAssertEqual(
+                session.noteScrubStep(direction: .right, absoluteTimeline: true),
+                TVScrubArrowSession.shortStepSeconds
+            )
+            XCTAssertEqual(
+                session.noteScrubStep(direction: .left, absoluteTimeline: false),
+                TVScrubArrowSession.shortStepSeconds
+            )
         }
-        XCTAssertEqual(steps[0], 60)
-        XCTAssertEqual(steps[2], 60)
-        XCTAssertEqual(steps[3], 180)
-        XCTAssertEqual(steps[7], 180)
-        XCTAssertEqual(steps[8], 600)
-        XCTAssertEqual(steps[9], 600)
+    }
+
+    func testHoldSuppressesAutoCommitAndReleaseDoesNotDebounce() async {
+        let session = TVPlayerControlSession()
+        session.noteControlsOpened(mediaIsCatchup: false)
+        let start = Date()
+        _ = session.beginScrub(absolute: start, windowStart: start, playerTime: 0, isPlaying: true)
+        let tokenBefore = session.autoCommitToken
+        session.noteHoldStarted()
+        session.applyPreviewDelta(-30, clamp: { $0 }, windowStart: start)
+        try? await Task.sleep(nanoseconds: 750_000_000)
+        XCTAssertEqual(session.autoCommitToken, tokenBefore, "hold must not auto-commit")
+        // Hold release commits from the overlay immediately — session only
+        // cancels the idle debounce (no 600 ms token bump).
+        session.noteHoldEnded()
+        try? await Task.sleep(nanoseconds: 750_000_000)
+        XCTAssertEqual(session.autoCommitToken, tokenBefore, "hold release must not schedule auto-commit")
+        XCTAssertTrue(session.isScrubbing)
+    }
+
+    func testHoldPreviewClampsToRangeWithoutSeek() {
+        let session = TVPlayerControlSession()
+        session.noteControlsOpened(mediaIsCatchup: false)
+        let start = Date(timeIntervalSince1970: 1_000)
+        let end = start.addingTimeInterval(100)
+        _ = session.beginScrub(absolute: start, windowStart: start, playerTime: 0, isPlaying: true)
+        session.noteHoldStarted()
+        session.applyPreviewDelta(
+            10_000,
+            clamp: { min(max($0, start), end) },
+            windowStart: start
+        )
+        XCTAssertEqual(session.previewAbsoluteTime, end)
+        XCTAssertEqual(session.scrubTarget, 100, accuracy: 0.001)
+        XCTAssertEqual(session.mediaReloadCount, 0)
+        session.applyPreviewDelta(
+            -10_000,
+            clamp: { min(max($0, start), end) },
+            windowStart: start
+        )
+        XCTAssertEqual(session.previewAbsoluteTime, start)
+        XCTAssertEqual(session.scrubTarget, 0, accuracy: 0.001)
+        XCTAssertEqual(session.mediaReloadCount, 0)
     }
 
     func testScrubAutoCommitFiresAfterIdleDebounce() async {
@@ -399,5 +442,131 @@ final class TVPlayerControlSessionTests: XCTestCase {
         session.cancelAutoCommit()
         try? await Task.sleep(nanoseconds: 750_000_000)
         XCTAssertEqual(session.autoCommitToken, tokenBefore)
+    }
+
+    /// Hour-back seek → watch → scrub again must start from the viewed point,
+    /// not a stale engine playhead that maps to the live edge.
+    func testRescrubAfterTimeshiftStartsFromViewedAnchorNotStaleClock() async throws {
+        let session = TVPlayerControlSession()
+        session.noteControlsOpened(mediaIsCatchup: false)
+
+        let now = Date()
+        let seekTarget = now.addingTimeInterval(-3600)
+        let windowStart = now.addingTimeInterval(-7200)
+
+        XCTAssertTrue(session.beginScrub(
+            absolute: seekTarget,
+            windowStart: windowStart,
+            playerTime: 0,
+            isPlaying: true
+        ))
+        XCTAssertTrue(session.tryBeginCommit(source: .select))
+        await session.runSeek(reason: "hour-back") { _ in
+            session.noteMediaReload(reason: "timeshift")
+            session.finishSeek(mediaIsCatchup: true, keepControls: true)
+        }
+        XCTAssertEqual(session.phase, .controls)
+        XCTAssertNil(session.previewAbsoluteTime)
+        XCTAssertEqual(session.playheadAnchorAbsolute, seekTarget)
+
+        let media = PlayableMedia(
+            id: "\(LiveTimeshift.timeshiftIDPrefix)ch-\(Int(seekTarget.timeIntervalSince1970))",
+            url: URL(string: "https://example.com/ts.m3u8")!,
+            title: "Ch",
+            subtitle: nil,
+            posterURL: nil,
+            kind: .vod,
+            startTime: 0,
+            contentRef: .live("ch"),
+            archiveWindowStart: seekTarget,
+            archiveWindowEnd: now.addingTimeInterval(60)
+        )
+
+        // Stale leftover playhead after URL rebuild (would map near/past live).
+        let afterWatch = now.addingTimeInterval(20)
+        let stalePlayerTime: TimeInterval = 9_500
+        let viewedWhileStale = session.viewedAbsoluteDate(
+            media: media,
+            playerTime: stalePlayerTime,
+            now: afterWatch
+        )
+        // Wall-clock advance from finishSeek seed (~20 s of watching).
+        XCTAssertEqual(
+            viewedWhileStale.timeIntervalSince1970,
+            seekTarget.addingTimeInterval(20).timeIntervalSince1970,
+            accuracy: 2
+        )
+
+        // Trusted engine time after the new session settles.
+        let viewedTrusted = session.viewedAbsoluteDate(
+            media: media,
+            playerTime: 20,
+            now: afterWatch
+        )
+        XCTAssertEqual(
+            viewedTrusted.timeIntervalSince1970,
+            seekTarget.addingTimeInterval(20).timeIntervalSince1970,
+            accuracy: 0.01
+        )
+
+        // Plausible-but-wrong playhead (~58 min into a 1-hour window) must not
+        // become the next scrub origin — that is the physical-ATV jump.
+        let nearLiveButWrong: TimeInterval = 3_500
+        let rejectedNearLive = session.viewedAbsoluteDate(
+            media: media,
+            playerTime: nearLiveButWrong,
+            now: afterWatch
+        )
+        XCTAssertEqual(
+            rejectedNearLive.timeIntervalSince1970,
+            seekTarget.addingTimeInterval(20).timeIntervalSince1970,
+            accuracy: 2,
+            "in-window leftover playhead must not snap scrub toward live"
+        )
+
+        XCTAssertTrue(session.beginScrub(
+            absolute: viewedTrusted,
+            windowStart: windowStart,
+            playerTime: 20,
+            isPlaying: true
+        ))
+        XCTAssertEqual(session.previewAbsoluteTime, viewedTrusted)
+
+        session.applyPreviewDelta(
+            -TVScrubArrowSession.shortStepSeconds,
+            clamp: { LiveTimeshift.clamp($0, stream: Self.dummyStream(), now: afterWatch) },
+            windowStart: windowStart
+        )
+        let expected = viewedTrusted.addingTimeInterval(-TVScrubArrowSession.shortStepSeconds)
+        let afterBack = try XCTUnwrap(session.previewAbsoluteTime)
+        XCTAssertEqual(
+            afterBack.timeIntervalSince1970,
+            expected.timeIntervalSince1970,
+            accuracy: 0.01,
+            "first short step must be exactly −10 s from the viewed position"
+        )
+
+        session.applyPreviewDelta(
+            TVScrubArrowSession.shortStepSeconds,
+            clamp: { LiveTimeshift.clamp($0, stream: Self.dummyStream(), now: afterWatch) },
+            windowStart: windowStart
+        )
+        let afterForward = try XCTUnwrap(session.previewAbsoluteTime)
+        XCTAssertEqual(
+            afterForward.timeIntervalSince1970,
+            viewedTrusted.timeIntervalSince1970,
+            accuracy: 0.01,
+            "forward step returns to the viewed position without a live-edge jump"
+        )
+    }
+
+    private static func dummyStream() -> LiveStream {
+        LiveStream(
+            id: "ch",
+            streamId: 1,
+            name: "Ch",
+            tvArchive: 1,
+            tvArchiveDuration: 3
+        )
     }
 }

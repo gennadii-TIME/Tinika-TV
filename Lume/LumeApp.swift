@@ -39,6 +39,10 @@ struct LumeApp: App {
     #endif
 
     init() {
+        // Pin Bundle / AppleLanguages before any localized UI or String Catalog
+        // lookup. Default is English when the user has not chosen a language.
+        AppInterfaceLanguage.applyStored()
+
         let (catalog, cloud) = Self.makeModelContainers()
         catalogContainer = catalog
         cloudContainer = cloud
@@ -202,6 +206,8 @@ struct LumeApp: App {
     /// `.preferredColorScheme` can't do this. The players stay unaffected —
     /// they force dark themselves.
     @AppStorage(AppAppearance.storageKey) private var appearanceRaw = AppAppearance.defaultValue.rawValue
+    @AppStorage(AppInterfaceLanguage.storageKey)
+    private var interfaceLanguageRaw = AppInterfaceLanguage.defaultValue.rawValue
 
     var body: some Scene {
         WindowGroup {
@@ -212,6 +218,7 @@ struct LumeApp: App {
                 .environment(profileManager)
                 .environment(playlistSwitch)
                 .environment(parentalControls)
+                .appInterfaceLanguage(AppInterfaceLanguage.resolve(interfaceLanguageRaw))
                 .task {
                     // Subscribe to MetricKit before anything else: payloads for a
                     // previous run are delivered shortly after launch, and one
@@ -243,9 +250,8 @@ struct LumeApp: App {
                     // playback). Runs off the main thread before playback starts.
                     await WatchProgressWriter.reconcilePending(container: catalogContainer)
 
-                    // If the preferred language changed since last launch (e.g.
-                    // via the per-app language override in iOS Settings), drop
-                    // cached TMDB enrichment so detail views re-fetch text,
+                    // If the in-app interface language changed since last launch,
+                    // drop cached TMDB enrichment so detail views re-fetch text,
                     // videos and artwork in the new language.
                     TMDBLanguageWatcher.invalidateEnrichmentIfLanguageChanged(
                         in: catalogContainer.mainContext
@@ -334,6 +340,9 @@ struct LumeApp: App {
                     #endif
                 }
                 .appAppearance(AppAppearance.resolve(appearanceRaw))
+                .onChange(of: interfaceLanguageRaw) { _, newValue in
+                    AppInterfaceLanguage.set(AppInterfaceLanguage.resolve(newValue))
+                }
         }
         .modelContainer(catalogContainer)
 

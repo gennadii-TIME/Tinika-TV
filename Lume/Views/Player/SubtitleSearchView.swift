@@ -198,7 +198,12 @@ struct SubtitleSearchView: View {
                 Text(media.title)
             } footer: {
                 if let remaining = service.remainingDownloads {
-                    Text("\(remaining) downloads left today.")
+                    Text(
+                        String(
+                            format: String(localized: "%lld downloads left today."),
+                            remaining
+                        )
+                    )
                 }
             }
         }
@@ -230,7 +235,12 @@ struct SubtitleSearchView: View {
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
                     }
-                    Text("\(subtitle.downloadCount) downloads")
+                    Text(
+                        String(
+                            format: String(localized: "%lld downloads"),
+                            subtitle.downloadCount
+                        )
+                    )
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }

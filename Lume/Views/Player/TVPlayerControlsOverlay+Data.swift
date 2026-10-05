@@ -160,9 +160,15 @@ import Foundation
         /// Wall-clock scrub window for the active live / timeshift channel.
         var liveTimeshiftWindow: (start: Date, end: Date)? {
             guard let stream = liveStream, LiveTimeshift.canTimeshift(stream: stream) else { return nil }
+            // Resolve the programme under the *viewed* playhead — not a stale
+            // `epgNow` from before the last timeshift seek — so the track maps
+            // the archive position the viewer is actually watching.
+            let playhead = displayedAbsoluteDate
+            let programStart = OSDProgramInfo.at(playhead, in: channelEPGGuide)?.start
+                ?? epgNow?.start
             return LiveTimeshift.scrubWindow(
                 stream: stream,
-                programStart: epgNow?.start,
+                programStart: programStart,
                 now: Date()
             )
         }
@@ -178,12 +184,16 @@ import Foundation
             usesAbsoluteScrub && canSeekMedia
         }
 
-        /// Absolute date currently shown on the scrubber (preview while scrubbing).
+        /// Absolute date on the scrubber: live preview while scrubbing, and the
+        /// same pinned target while seek is in flight so the knob does not jump
+        /// back to the old playhead before the engine catches up.
         var displayedAbsoluteDate: Date {
-            if controlSession.isScrubbing, let preview = controlSession.previewAbsoluteTime {
+            if let preview = controlSession.previewAbsoluteTime,
+               controlSession.isScrubbing || controlSession.isSeekInFlight
+            {
                 return preview
             }
-            return LiveTimeshift.absolutePlaybackDate(
+            return controlSession.viewedAbsoluteDate(
                 media: media,
                 playerTime: clock.current
             )
@@ -205,9 +215,10 @@ import Foundation
             guard controlSession.isScrubbing, usesAbsoluteScrub,
                   let preview = controlSession.previewAbsoluteTime
             else { return nil }
-            let origin = LiveTimeshift.absolutePlaybackDate(
-                media: media, playerTime: clock.current
-            )
+            // Delta is relative to where scrub *began*, not a live engine sample
+            // that may still be stale after the previous timeshift rebuild.
+            let origin = controlSession.playheadAnchorAbsolute
+                ?? controlSession.viewedAbsoluteDate(media: media, playerTime: clock.current)
             return LiveTimeshift.liveOffsetLabel(preview.timeIntervalSince(origin))
         }
 
@@ -263,9 +274,57 @@ import Foundation
             }
         }
 
-        /// ←/→ on compact live OSD: enter preview if needed, then nudge.
-        /// Auto-commit fires ~600 ms after the last nudge.
+        /// ←/→ short step (10 s). Used by `TVScrubArrowInput` and swipe-only
+        /// MoveCommands when no arrow UIPress is down.
         func handleCompactHorizontal(_ direction: MoveCommandDirection) {
+            guard let scrubDirection = Self.scrubDirection(from: direction) else { return }
+            applyShortScrubStep(scrubDirection)
+        }
+
+        private static func scrubDirection(from direction: MoveCommandDirection) -> TVScrubArrowDirection? {
+            switch direction {
+            case .left: .left
+            case .right: .right
+            default: nil
+            }
+        }
+
+        /// Single entry for Apple MoveCommand and CEC while compact OSD is
+        /// visible. ←/→ are owned by `TVScrubArrowInput` (UIPress hold or CEC
+        /// key-repeat). ↑/↓ always surf channels.
+        func handleCompactOSDMove(_ direction: MoveCommandDirection) {
+            guard usesCompactLiveOSD, openTab == nil else { return }
+            switch direction {
+            case .up, .down:
+                #if os(tvOS)
+                    // Discard in-flight hold without seeking — surf owns navigation.
+                    TVScrubArrowInput.shared.forceStop(scheduleCommit: false)
+                #endif
+                prepareAndSurfChannel(direction)
+            case .left, .right:
+                #if os(tvOS)
+                    // While a physical ←/→ UIPress is down, MoveCommand + CEC
+                    // must not also step — the press session owns the nudge.
+                    if TVScrubArrowInput.shared.isPressActive { return }
+                    if let scrubDirection = Self.scrubDirection(from: direction) {
+                        // CEC key-repeat / MoveCommand stream: first pulse =
+                        // short step, further pulses = hold ramp. Always
+                        // consumed when armed so we never double-step.
+                        if TVScrubArrowInput.shared.handleNonPressCommand(scrubDirection) {
+                            onResetHideTimer()
+                            return
+                        }
+                    }
+                #endif
+                handleCompactHorizontal(direction)
+                onResetHideTimer()
+            default:
+                break
+            }
+        }
+
+        /// Ensure scrub preview is active, then apply one fixed 10 s step.
+        func applyShortScrubStep(_ direction: TVScrubArrowDirection) {
             guard !controlSession.isSeekInFlight,
                   !controlSession.isCommitInFlight
             else { return }
@@ -277,22 +336,107 @@ import Foundation
             if !controlSession.isScrubbing {
                 beginScrub()
             }
-            moveScrub(direction)
+            guard controlSession.isScrubbing else { return }
+            let step = TVScrubArrowSession.shortStepSeconds
+            applyScrubDelta(direction.sign * step, schedulesAutoCommit: true)
+            onResetHideTimer()
         }
 
-        /// Single entry for Apple MoveCommand and CEC/UIPress while compact OSD
-        /// is visible. ←/→ scrub; ↑/↓ SurfCursor (after cancelling preview/seek).
-        func handleCompactOSDMove(_ direction: MoveCommandDirection) {
-            guard usesCompactLiveOSD, openTab == nil else { return }
-            switch direction {
-            case .up, .down:
-                prepareAndSurfChannel(direction)
-            case .left, .right:
-                handleCompactHorizontal(direction)
-                onResetHideTimer()
-            default:
-                break
+        /// Continuous hold preview — no seek, no auto-commit until release.
+        func applyHoldScrubDelta(_ delta: TimeInterval) {
+            guard controlSession.isScrubbing,
+                  !controlSession.isSeekInFlight,
+                  !controlSession.isCommitInFlight
+            else { return }
+            applyScrubDelta(delta, schedulesAutoCommit: false)
+            onResetHideTimer()
+        }
+
+        private func applyScrubDelta(_ delta: TimeInterval, schedulesAutoCommit: Bool) {
+            if usesAbsoluteScrub {
+                applyPreviewDelta(delta)
+                if schedulesAutoCommit {
+                    controlSession.notePreviewNudged()
+                } else {
+                    controlSession.noteHoldStarted()
+                }
+            } else {
+                guard clock.duration > 0 else { return }
+                let next = min(
+                    max(controlSession.scrubTarget + delta, 0),
+                    clock.duration
+                )
+                controlSession.setVODScrubTarget(next)
+                if schedulesAutoCommit {
+                    controlSession.notePreviewNudged()
+                } else {
+                    controlSession.noteHoldStarted()
+                }
             }
+        }
+
+        func bindScrubArrowInput() {
+            #if os(tvOS)
+                let input = TVScrubArrowInput.shared
+                input.onShortStep = { [self] direction in
+                    applyShortScrubStep(direction)
+                }
+                input.onHoldStarted = { [self] _ in
+                    guard canSeekMedia else {
+                        archiveBanner = String(localized: "Seeking unavailable")
+                        TVScrubArrowInput.shared.forceStop(scheduleCommit: false)
+                        return
+                    }
+                    if !controlSession.isScrubbing {
+                        beginScrub()
+                    }
+                    controlSession.noteHoldStarted()
+                }
+                input.onHoldDelta = { [self] delta in
+                    guard canSeekMedia else { return }
+                    if !controlSession.isScrubbing {
+                        beginScrub()
+                    }
+                    applyHoldScrubDelta(delta)
+                }
+                input.onHoldEnded = { [self] in
+                    // Release / watchdog: stop preview and seek immediately —
+                    // no 600 ms auto-commit delay.
+                    controlSession.noteHoldEnded()
+                    if controlSession.isScrubbing {
+                        commitScrub(hideAfterSeek: true, source: .autoCommit)
+                    }
+                    onResetHideTimer()
+                }
+                refreshScrubArrowArming()
+            #endif
+        }
+
+        func unbindScrubArrowInput() {
+            #if os(tvOS)
+                let input = TVScrubArrowInput.shared
+                input.forceStop(scheduleCommit: false)
+                input.setEnabled(false)
+                input.onShortStep = nil
+                input.onHoldStarted = nil
+                input.onHoldDelta = nil
+                input.onHoldEnded = nil
+            #endif
+        }
+
+        func refreshScrubArrowArming() {
+            #if os(tvOS)
+                // Compact live/archive OSD: armed whenever chrome is up (first
+                // ←/→ begins scrub). Classic VOD: only while scrubbing so idle
+                // arrows can still move focus.
+                let armed: Bool
+                if usesCompactLiveOSD {
+                    armed = openTab == nil
+                } else {
+                    armed = controlSession.isScrubbing
+                }
+                TVScrubArrowInput.shared.setEnabled(armed)
+            #endif
         }
 
         /// Cancel scrub preview / stale seek, then forward ↑/↓ to SurfCursor.
@@ -360,7 +504,10 @@ import Foundation
             guard canSeekMedia else { return }
             guard !controlSession.isSeekInFlight else { return }
             controlSession.cancelAutoCommit()
-            let absolute = LiveTimeshift.absolutePlaybackDate(
+            // Always start a *new* scrub session from the currently viewed
+            // absolute position (trusted engine time, else seeded seek anchor)
+            // — never from a leftover preview or a stale post-rebuild clock.
+            let absolute = controlSession.viewedAbsoluteDate(
                 media: media, playerTime: clock.current
             )
             let started = controlSession.beginScrub(
@@ -391,11 +538,14 @@ import Foundation
             hideAfterSeek: Bool = false,
             source: TVPlayerControlSession.CommitSource = .select
         ) {
+            #if os(tvOS)
+                TVScrubArrowInput.shared.forceStop(scheduleCommit: false)
+            #endif
             guard controlSession.isScrubbing else { return }
             guard controlSession.tryBeginCommit(source: source) else { return }
             if usesAbsoluteScrub {
                 let target = controlSession.previewAbsoluteTime
-                    ?? LiveTimeshift.absolutePlaybackDate(media: media, playerTime: clock.current)
+                    ?? controlSession.viewedAbsoluteDate(media: media, playerTime: clock.current)
                 Task { @MainActor in
                     await seekToAbsoluteTime(target, resumeAfter: true)
                     if hideAfterSeek { onPanelOpenChange(false) }
@@ -480,6 +630,11 @@ import Foundation
 
             let now = Date()
             let clamped = LiveTimeshift.clamp(targetDate, stream: stream, now: now)
+            // Keep the knob on the chosen absolute time through URL rebuild even
+            // when this seek did not originate from scrub preview.
+            if controlSession.previewAbsoluteTime == nil {
+                controlSession.pinSeekPreview(clamped)
+            }
 
             // At / past the live edge → real live URL.
             if now.timeIntervalSince(clamped) <= LiveTimeshift.liveEdgeSlack {
@@ -624,6 +779,9 @@ import Foundation
 
         /// Abort the scrub (Menu / ↑) without seeking.
         func cancelScrub() {
+            #if os(tvOS)
+                TVScrubArrowInput.shared.forceStop(scheduleCommit: false)
+            #endif
             let resume = controlSession.wasPlayingBeforeScrub && !usesAbsoluteScrub
             guard controlSession.cancelScrub() else { return }
             if resume, !coordinator.isPlaying { onTogglePlay() }
@@ -632,29 +790,24 @@ import Foundation
             onResetHideTimer()
         }
 
-        /// Step the scrub preview on a left/right press.
+        /// Step the scrub preview on a left/right press (fixed 10 s).
         func moveScrub(_ direction: MoveCommandDirection) {
-            guard controlSession.isScrubbing else { return }
-            let sign: Double
-            switch direction {
-            case .left: sign = -1
-            case .right: sign = 1
-            default: return
-            }
-            guard let gateDirection = RemoteDirectionGate.Direction(direction) else { return }
-            let step = controlSession.noteScrubStep(
-                direction: gateDirection,
-                absoluteTimeline: usesAbsoluteScrub
-            )
+            guard let scrubDirection = Self.scrubDirection(from: direction) else { return }
+            applyShortScrubStep(scrubDirection)
+        }
 
-            if usesAbsoluteScrub {
-                applyPreviewDelta(sign * step)
-            } else {
-                guard clock.duration > 0 else { return }
-                let next = min(max(controlSession.scrubTarget + sign * step, 0), clock.duration)
-                controlSession.setVODScrubTarget(next)
-                onResetHideTimer()
-            }
+        /// Classic / VOD ←/→ while scrubbing: UIPress owns continuous hold;
+        /// MoveCommand / CEC pulses use the shared repeat driver.
+        func handleClassicScrubMove(_ direction: MoveCommandDirection) {
+            #if os(tvOS)
+                guard !TVScrubArrowInput.shared.isPressActive else { return }
+                if let scrubDirection = Self.scrubDirection(from: direction),
+                   TVScrubArrowInput.shared.handleNonPressCommand(scrubDirection)
+                {
+                    return
+                }
+            #endif
+            moveScrub(direction)
         }
 
         /// Jump to the previous or next EPG programme relative to the playhead.

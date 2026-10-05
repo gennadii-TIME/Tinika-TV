@@ -90,7 +90,7 @@ import SwiftUI
                     Image(systemName: "pencil")
                 }
                 .buttonStyle(TVContentIconButtonStyle())
-                .accessibilityLabel("Edit \(playlist.name)")
+                .accessibilityLabel(AppInterfaceLanguage.localizedFormat("Edit %@", playlist.name))
             }
         }
 

@@ -5,9 +5,9 @@ IPTV for **Apple TV, iPhone, iPad, Mac, and Vision Pro** — based on the full
 
 ![Tinika TV](docs/screenshots/everywhere_tinika.png)
 
-- Site: <https://gennadii-time.github.io/Tinika-TV/>
+- Site / support: <https://tinika.lv>
 - Privacy: <https://gennadii-time.github.io/Tinika-TV/privacy.html>
-- Support: <support@tinika.lv>
+- Email: <support@tinika.lv>
 - Plan: [`docs/PRODUCT_PLAN.md`](docs/PRODUCT_PLAN.md)
 
 ## Requirements

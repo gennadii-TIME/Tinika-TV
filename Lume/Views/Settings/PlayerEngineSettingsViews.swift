@@ -207,7 +207,7 @@ import SwiftUI
                 HStack(spacing: 16) {
                     Text(title)
                     Spacer(minLength: 0)
-                    Text(isOn ? "On" : "Off")
+                    Text(isOn ? LocalizedStringKey("On") : LocalizedStringKey("Off"))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -321,7 +321,6 @@ import SwiftUI
         @AppStorage(PlayerSettings.KSPlayer.adaptiveKey) private var adaptive = PlayerSettings.KSPlayer.adaptiveDefault
         @AppStorage(PlayerSettings.KSPlayer.noBufferKey) private var noBuffer = PlayerSettings.KSPlayer.noBufferDefault
         @AppStorage(PlayerSettings.KSPlayer.codecLowDelayKey) private var codecLowDelay = PlayerSettings.KSPlayer.codecLowDelayDefault
-        @AppStorage(PlayerSettings.KSPlayer.autoPipKey) private var autoPip = PlayerSettings.KSPlayer.autoPipDefault
         @AppStorage(PlayerSettings.KSPlayer.autoSelectSubtitleKey) private var autoSelectSubtitle = PlayerSettings.KSPlayer.autoSelectSubtitleDefault
         @AppStorage(PlayerSettings.KSPlayer.liveBufferKey) private var liveBuffer = PlayerSettings.KSPlayer.liveBufferDefault
         @AppStorage(PlayerSettings.KSPlayer.vodBufferKey) private var vodBuffer = PlayerSettings.KSPlayer.vodBufferDefault
@@ -351,7 +350,8 @@ import SwiftUI
                     TVOptionToggleRow(title: "Fast Open", isOn: $secondOpen)
                     TVOptionToggleRow(title: "Loop Playback", isOn: $loopPlay)
                     TVOptionToggleRow(title: "Auto-Select Subtitles", isOn: $autoSelectSubtitle)
-                    TVOptionToggleRow(title: "Automatic Picture in Picture", isOn: $autoPip)
+                    // Automatic Picture in Picture is iOS/macOS only — tvOS has
+                    // no PiP UX and closes the player on background.
                     TVOptionToggleRow(title: "Use System HTTP Proxy", isOn: $systemProxy)
                 }
 

@@ -190,7 +190,7 @@
                 }
                 .buttonStyle(TVContentIconButtonStyle())
                 .disabled(index == 0)
-                .accessibilityLabel("Move \(name) up")
+                .accessibilityLabel(AppInterfaceLanguage.localizedFormat("Move %@ up", name))
 
                 Button {
                     onMove(1)
@@ -199,14 +199,14 @@
                 }
                 .buttonStyle(TVContentIconButtonStyle())
                 .disabled(index == count - 1)
-                .accessibilityLabel("Move \(name) down")
+                .accessibilityLabel(AppInterfaceLanguage.localizedFormat("Move %@ down", name))
 
                 if let onRemove {
                     Button(action: onRemove) {
                         Image(systemName: "minus")
                     }
                     .buttonStyle(TVContentIconButtonStyle())
-                    .accessibilityLabel("Remove \(name)")
+                    .accessibilityLabel(AppInterfaceLanguage.localizedFormat("Remove %@", name))
                 }
             }
             .padding(.horizontal, TVSettingsMetrics.rowHPadding)

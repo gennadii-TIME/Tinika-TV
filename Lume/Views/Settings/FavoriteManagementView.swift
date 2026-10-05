@@ -37,9 +37,9 @@ struct FavoriteEntry: Identifiable, ReorderableRowItem {
 
         var label: String {
             switch self {
-            case .live: String(localized: "Live TV")
-            case .movie: String(localized: "Movie")
-            case .series: String(localized: "Series")
+            case .live: AppInterfaceLanguage.localized("Live TV")
+            case .movie: AppInterfaceLanguage.localized("Movie")
+            case .series: AppInterfaceLanguage.localized("Series")
             }
         }
 
@@ -245,7 +245,7 @@ struct FavoriteManagementView: View {
                         .foregroundStyle(.red)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel("Remove \(entry.title) from favorites")
+                .accessibilityLabel(AppInterfaceLanguage.localizedFormat("Remove %@ from favorites", entry.title))
 
                 CachedAsyncImage(url: entry.iconURL, maxPixelSize: 44) { phase in
                     switch phase {

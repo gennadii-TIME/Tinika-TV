@@ -198,7 +198,7 @@ import SwiftUI
                     Image(systemName: "pencil")
                 }
                 .buttonStyle(TVContentIconButtonStyle())
-                .accessibilityLabel("Edit \(profile.name)")
+                .accessibilityLabel(AppInterfaceLanguage.localizedFormat("Edit %@", profile.name))
             }
         }
     }

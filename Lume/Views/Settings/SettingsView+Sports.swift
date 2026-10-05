@@ -128,10 +128,10 @@ import SwiftUI
 
         private var lastRefreshText: String {
             guard let last = sync.lastRefresh else {
-                return String(localized: "Sports haven't refreshed yet.")
+                return AppInterfaceLanguage.localized("Sports haven't refreshed yet.")
             }
             let relative = last.formatted(.relative(presentation: .named))
-            return String(localized: "Last refreshed \(relative)")
+            return AppInterfaceLanguage.localizedFormat("Last refreshed %@", relative)
         }
     }
 

@@ -44,7 +44,11 @@
         /// screen overrides it with a heart to mean "remove from favorites".
         var toggleImage: (Bool) -> String = { $0 ? "eye.slash" : "eye" }
         /// Accessibility label for that toggle, given `isHidden` and the title.
-        var toggleAccessibility: (Bool, String) -> String = { $0 ? "Show \($1)" : "Hide \($1)" }
+        var toggleAccessibility: (Bool, String) -> String = {
+            $0
+                ? AppInterfaceLanguage.localizedFormat("Show %@", $1)
+                : AppInterfaceLanguage.localizedFormat("Hide %@", $1)
+        }
         /// Commit the final arrangement (single batched persistence pass).
         let onCommitOrder: ([Item]) -> Void
         /// When both are provided, each row gains a second toggle (a lock) to
@@ -79,7 +83,11 @@
             isRestricted: ((Item) -> Bool)? = nil,
             onToggleRestricted: ((Item) -> Void)? = nil,
             toggleImage: @escaping (Bool) -> String = { $0 ? "eye.slash" : "eye" },
-            toggleAccessibility: @escaping (Bool, String) -> String = { $0 ? "Show \($1)" : "Hide \($1)" }
+            toggleAccessibility: @escaping (Bool, String) -> String = {
+                $0
+                    ? AppInterfaceLanguage.localizedFormat("Show %@", $1)
+                    : AppInterfaceLanguage.localizedFormat("Hide %@", $1)
+            }
         ) {
             self.items = items
             self.title = title
@@ -131,7 +139,9 @@
                         toggleImageName: toggleImage(isHidden(item)),
                         toggleAccessibilityLabel: toggleAccessibility(isHidden(item), title(item)),
                         isRestricted: isRestricted?(item),
-                        restrictionAccessibilityLabel: (isRestricted?(item) ?? false) ? "Unrestrict \(title(item))" : "Restrict \(title(item))",
+                        restrictionAccessibilityLabel: (isRestricted?(item) ?? false)
+                            ? AppInterfaceLanguage.localizedFormat("Unrestrict %@", title(item))
+                            : AppInterfaceLanguage.localizedFormat("Restrict %@", title(item)),
                         onToggleRestricted: onToggleRestricted.map { toggle in { toggle(item) } },
                         focus: $focusedID,
                         onGrabOrDrop: { lifted ? drop() : lift(item) },
@@ -270,7 +280,14 @@
                 // focus traversal / Menu behaviour when at rest.
                 .onMoveCommand(perform: isLifted ? { onMove($0) } : nil)
                 .onExitCommand(perform: isLifted ? onCancel : nil)
-                .accessibilityLabel(isLifted ? "Placing \(title). Move up or down, then select to place." : "Move \(title)")
+                .accessibilityLabel(
+                    isLifted
+                        ? AppInterfaceLanguage.localizedFormat(
+                            "Placing %@. Move up or down, then select to place.",
+                            title
+                        )
+                        : AppInterfaceLanguage.localizedFormat("Move %@", title)
+                )
 
                 if !isMoving {
                     Button(action: onToggleHidden) {

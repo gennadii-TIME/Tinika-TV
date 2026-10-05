@@ -2,9 +2,10 @@
 //  TVCompactOSDNavRelay.swift
 //  Lume
 //
-//  Delivers arrow presses to the compact OSD focus graph while the OSD is
-//  visible, so HDMI-CEC (Samsung) UIPress events share the same navigation
-//  path as Apple Remote MoveCommand without falling through to channel surf.
+//  Optional bridge for compact-OSD ←/→ while chrome is visible. Live ↑/↓ no
+//  longer enter here — window UIPress/CEC twins share `handleChannelSurfInput`
+//  with MoveCommand so a surf cannot flip into NavRelay and re-arm the hide
+//  timer after the OSD was (incorrectly) raised.
 //
 
 #if os(tvOS)

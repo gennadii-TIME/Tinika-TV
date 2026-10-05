@@ -73,6 +73,8 @@ struct SettingsView: View {
         @AppStorage(AppAppearance.storageKey)
         private var appearanceRaw = AppAppearance.defaultValue.rawValue
     #endif
+    @AppStorage(AppInterfaceLanguage.storageKey)
+    var interfaceLanguageRaw = AppInterfaceLanguage.defaultValue.rawValue
     /// Not `private`: read by the SettingsView+AutoSync extension (separate file).
     @AppStorage(SyncFrequency.storageKey) var syncFrequencyRaw: String = SyncFrequency.defaultValue.rawValue
     #if !os(tvOS)
@@ -111,6 +113,9 @@ struct SettingsView: View {
         /// `selectedEngineOptions`). Not `private`: read by the
         /// SettingsView+TVPlayer extension (separate file).
         @State var preferredLanguagePane: PreferredLanguagePane?
+        /// Interface-language list drilled in from Interface → Language.
+        /// Not `private`: read by SettingsView+TVComponents.
+        @State var showingInterfaceLanguageList = false
 
         enum PreferredLanguagePane {
             case list, add
@@ -292,6 +297,16 @@ struct SettingsView: View {
 
         private var appearanceSection: some View {
             Section {
+                NavigationLink {
+                    InterfaceLanguageListView(selectionRaw: $interfaceLanguageRaw)
+                } label: {
+                    HStack {
+                        Text("Language")
+                        Spacer()
+                        Text(verbatim: AppInterfaceLanguage.resolve(interfaceLanguageRaw).nativeDisplayName)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Picker("Appearance", selection: $appearanceRaw) {
                     ForEach(AppAppearance.allCases) { appearance in
                         Text(appearance.title).tag(appearance.rawValue)
@@ -301,7 +316,7 @@ struct SettingsView: View {
             } header: {
                 Text("Appearance")
             } footer: {
-                Text("Follow the device appearance, or keep Lume always in Dark or Light Mode.")
+                Text("Choose the app language (default English). Appearance can follow the device, or stay Dark or Light.")
             }
         }
 
@@ -325,9 +340,15 @@ struct SettingsView: View {
                             Label("Trakt", systemImage: "arrow.trianglehead.2.clockwise.rotate.90.circle")
                             Spacer()
                             if trakt.isConnected {
-                                Text(trakt.username.map { "@\($0)" } ?? "Connected")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                if let username = trakt.username {
+                                    Text(verbatim: "@\(username)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text("Connected")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
@@ -341,9 +362,15 @@ struct SettingsView: View {
                             Label("Simkl", systemImage: "arrow.trianglehead.2.clockwise.rotate.90.circle")
                             Spacer()
                             if simkl.isConnected {
-                                Text(simkl.username.map { "@\($0)" } ?? "Connected")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                if let username = simkl.username {
+                                    Text(verbatim: "@\(username)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    Text("Connected")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
@@ -475,6 +502,7 @@ struct SettingsView: View {
                         selectedPlaylist = nil
                         selectedEngineOptions = nil
                         preferredLanguagePane = nil
+                        showingInterfaceLanguageList = false
                     }
                 }
                 .fullScreenCover(isPresented: $showingAddPlaylist) {
@@ -549,7 +577,12 @@ struct SettingsView: View {
                         }
                     case .profiles: TVProfilesSettingsView()
                     case .home: tvHomeLayoutDetail
-                    case .interface: tvInterfaceDetail
+                    case .interface:
+                        if showingInterfaceLanguageList {
+                            tvInterfaceLanguageListDetail
+                        } else {
+                            tvInterfaceDetail
+                        }
                     case .sports: TVSportsSettingsPane()
                     case .epg: EPGSettingsView()
                     case .search: tvSearchDetail

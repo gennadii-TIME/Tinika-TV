@@ -19,7 +19,7 @@ nonisolated enum PlayerEngineKind: String, CaseIterable, Identifiable {
         case .vlcKit: "VLCKit"
         case .ksPlayer: "KSPlayer"
         case .avPlayer: "AVPlayer"
-        case .lumeEngine: "Lume Engine (Beta)"
+        case .lumeEngine: AppInterfaceLanguage.localized("Lume Engine (Beta)")
         }
     }
 
@@ -253,11 +253,11 @@ enum PlayerSettings {
 
         var displayName: String {
             switch self {
-            case .automatic: String(localized: "Automatic")
-            case .oneSecond: String(localized: "1 Second")
-            case .threeSeconds: String(localized: "3 Seconds")
-            case .fiveSeconds: String(localized: "5 Seconds")
-            case .tenSeconds: String(localized: "10 Seconds")
+            case .automatic: AppInterfaceLanguage.localized("Automatic")
+            case .oneSecond: AppInterfaceLanguage.localized("1 Second")
+            case .threeSeconds: AppInterfaceLanguage.localized("3 Seconds")
+            case .fiveSeconds: AppInterfaceLanguage.localized("5 Seconds")
+            case .tenSeconds: AppInterfaceLanguage.localized("10 Seconds")
             }
         }
 

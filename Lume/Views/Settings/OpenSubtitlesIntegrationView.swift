@@ -114,12 +114,18 @@ struct OpenSubtitlesSignInSection: View {
 
     private var allowanceSummary: String {
         if let remaining = service.remainingDownloads {
-            return String(localized: "\(remaining) subtitle downloads left today.")
+            return AppInterfaceLanguage.localizedFormat(
+                "%lld subtitle downloads left today.",
+                remaining
+            )
         }
         if let allowed = service.allowedDownloads, allowed > 0 {
-            return String(localized: "Your account allows \(allowed) subtitle downloads a day.")
+            return AppInterfaceLanguage.localizedFormat(
+                "Your account allows %lld subtitle downloads a day.",
+                allowed
+            )
         }
-        return String(localized: "Search for subtitles from the player's subtitle menu while a movie or episode is playing.")
+        return AppInterfaceLanguage.localized("Search for subtitles from the player's subtitle menu while a movie or episode is playing.")
     }
 }
 

@@ -196,6 +196,22 @@ final class AVPlayerCoordinator: NSObject, ObservableObject {
         load(media: media)
     }
 
+    /// Snapshot the current `AVPlayerLayer` before `replaceCurrentItem` blanks
+    /// it. Call from the engine view immediately before `reload(media:)`.
+    #if canImport(UIKit)
+        func captureFreezeFrame() -> UIImage? {
+            guard let layer = playerLayer else { return nil }
+            if let fromLayer = PlayerFreezeFrame.capture(layer: layer) {
+                return fromLayer
+            }
+            // layerClass-backed host: the player layer's delegate is the UIView.
+            if let view = layer.delegate as? UIView {
+                return PlayerFreezeFrame.capture(view: view)
+            }
+            return nil
+        }
+    #endif
+
     private func load(media: PlayableMedia) {
         teardownItemObservers()
         trackLoadTask?.cancel()

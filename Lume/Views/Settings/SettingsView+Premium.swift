@@ -29,7 +29,7 @@ extension SettingsView {
         if let price = premium.product(for: .lifetime)?.displayPrice {
             return PremiumAccessCopy.buyForeverTitle(displayPrice: price)
         }
-        return String(localized: "Buy Forever")
+        return AppInterfaceLanguage.localized("Buy Forever")
     }
 }
 

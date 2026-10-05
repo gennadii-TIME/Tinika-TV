@@ -40,5 +40,5 @@ We may update this policy. The “Last updated” date above will change when we
 ## Contact
 
 Questions about privacy: **support@tinika.lv**  
-Website: [gennadii-TIME.github.io/Tinika-TV](https://gennadii-time.github.io/Tinika-TV/)  
+Website: [tinika.lv](https://tinika.lv)  
 Source: [github.com/gennadii-TIME/Tinika-TV](https://github.com/gennadii-TIME/Tinika-TV)

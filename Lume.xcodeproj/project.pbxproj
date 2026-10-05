@@ -217,6 +217,7 @@
 				C67C02BC2F880F2200842DBA /* Sources */,
 				C67C02BD2F880F2200842DBA /* Frameworks */,
 				C67C02BE2F880F2200842DBA /* Resources */,
+				C6LOC0010000000000000001 /* Compile Localizable.xcstrings */,
 				C6AA10052FDD00010000AA05 /* Embed Frameworks */,
 				C66C81702FC5A59D0048468E /* Fix Embedded Framework CFBundleIdentifier (post-embed) */,
 				C6AA310C2FDD00020000AB0C /* Embed Foundation Extensions */,
@@ -374,6 +375,7 @@
 				ja,
 				ko,
 				"zh-Hans",
+				ru,
 			);
 			mainGroup = C67C02B72F880F2200842DBA;
 			minimizedProjectReferenceProxies = 1;
@@ -493,6 +495,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${SRCROOT}/Scripts/inject-env.sh\"\n";
+		};
+		C6LOC0010000000000000001 /* Compile Localizable.xcstrings */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Lume/Localizable.xcstrings",
+			);
+			name = "Compile Localizable.xcstrings";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Scripts/compile-localizable.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

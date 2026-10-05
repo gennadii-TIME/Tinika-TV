@@ -98,9 +98,9 @@ enum ExternalPlayerScope: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .all: String(localized: "Everything")
-        case .vod: String(localized: "Movies & Series")
-        case .live: String(localized: "Live TV")
+        case .all: AppInterfaceLanguage.localized("Everything")
+        case .vod: AppInterfaceLanguage.localized("Movies & Series")
+        case .live: AppInterfaceLanguage.localized("Live TV")
         }
     }
 

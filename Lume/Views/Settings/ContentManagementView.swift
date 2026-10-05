@@ -259,7 +259,7 @@ struct ContentManagementView: View {
                     Button {
                         selectedType = type
                     } label: {
-                        Text(type.label)
+                        Text(type.localizedLabel)
                     }
                     .buttonStyle(TVSettingsActionButtonStyle(prominent: selectedType == type))
                 }
@@ -338,7 +338,7 @@ struct ContentManagementView: View {
                 Section {
                     Picker("Type", selection: $selectedType) {
                         ForEach(CategoryType.allCases) { type in
-                            Text(type.label).tag(type)
+                            Text(type.localizedLabel).tag(type)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -402,11 +402,14 @@ struct ContentManagementView: View {
 
         private var footerText: String {
             let lead = selectedType == .live
-                ? String(localized: "Hide categories to remove them from Live TV, or tap a category to manage its channels.")
-                : String(localized: "Hide categories to remove them from \(selectedType.label).")
-            let controls = String(localized: "Lock a category to hide it from child profiles. Drag to reorder.")
-            let bulk = String(localized: "Show All and Hide All apply to whatever the list is showing, so you can search first and bulk-apply to the matches.")
-            let reset = String(localized: "Reset restores the playlist's order and shows everything.")
+                ? AppInterfaceLanguage.localized("Hide categories to remove them from Live TV, or tap a category to manage its channels.")
+                : AppInterfaceLanguage.localizedFormat(
+                    "Hide categories to remove them from %@.",
+                    selectedType.label
+                )
+            let controls = AppInterfaceLanguage.localized("Lock a category to hide it from child profiles. Drag to reorder.")
+            let bulk = AppInterfaceLanguage.localized("Show All and Hide All apply to whatever the list is showing, so you can search first and bulk-apply to the matches.")
+            let reset = AppInterfaceLanguage.localized("Reset restores the playlist's order and shows everything.")
             return [lead, controls, bulk, reset].joined(separator: " ")
         }
     #endif
@@ -436,8 +439,11 @@ struct ContentManagementView: View {
                         .foregroundStyle(isHidden ? Color.secondary : Color.accentColor)
                 }
                 .buttonStyle(.borderless)
-                .accessibilityLabel(isHidden ? "Show \(title)" : "Hide \(title)")
-
+                .accessibilityLabel(
+                    isHidden
+                        ? AppInterfaceLanguage.localizedFormat("Show %@", title)
+                        : AppInterfaceLanguage.localizedFormat("Hide %@", title)
+                )
                 Button(action: onToggleRestricted) {
                     Image(systemName: isRestricted ? "lock.fill" : "lock.open")
                         .foregroundStyle(isRestricted ? Color.orange : Color.secondary)

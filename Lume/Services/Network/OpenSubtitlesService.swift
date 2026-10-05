@@ -78,7 +78,7 @@ final class OpenSubtitlesService {
     /// keys on the bare language part (`de`, `pt-br`), so a full identifier like
     /// `de-DE` is trimmed back to its language code.
     static func defaultLanguages() -> [String] {
-        let preferred = Locale.preferredLanguages.first ?? "en"
+        let preferred = AppInterfaceLanguage.current.localeIdentifier
         let code = Locale(identifier: preferred).language.languageCode?.identifier ?? "en"
         return [code]
     }
@@ -111,7 +111,7 @@ final class OpenSubtitlesService {
             allowedDownloads = newSession.allowedDownloads
             remainingDownloads = nil
         } catch let error as OpenSubtitlesError {
-            signInError = String(localized: error.message)
+            signInError = AppInterfaceLanguage.localized(error.message)
         } catch {
             signInError = error.localizedDescription
         }

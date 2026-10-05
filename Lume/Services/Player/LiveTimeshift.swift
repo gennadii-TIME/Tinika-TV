@@ -63,6 +63,10 @@ enum LiveTimeshift {
     /// Absolute wall-clock date currently on screen.
     /// - Live: `now`
     /// - Timeshift / catch-up with archive window: `archiveStart + playerTime`
+    ///
+    /// Prefer `viewedAbsoluteDate` for OSD / scrub anchoring — a stale engine
+    /// playhead after a timeshift URL rebuild can be hours ahead and would map
+    /// straight to the live edge if used raw.
     static func absolutePlaybackDate(
         media: PlayableMedia,
         playerTime: TimeInterval,
@@ -74,6 +78,39 @@ enum LiveTimeshift {
             return start.addingTimeInterval(t)
         }
         return now
+    }
+
+    /// Whether `playerTime` is a plausible offset inside the archive clip
+    /// (not a leftover sample from the previous live / timeshift item).
+    static func isPlayerTimeTrusted(
+        media: PlayableMedia,
+        playerTime: TimeInterval,
+        now: Date = Date()
+    ) -> Bool {
+        guard !media.isLive, let start = media.archiveWindowStart else { return true }
+        guard playerTime.isFinite, playerTime >= 0 else { return false }
+        // Live edge of this clip: cannot have played past "now" relative to start.
+        let maxPlausible = now.timeIntervalSince(start) + 45
+        return playerTime <= maxPlausible
+    }
+
+    /// Absolute date for the idle knob and for starting a new scrub session.
+    /// Falls back to `fallback` (last trusted / committed seek target) when the
+    /// engine playhead is untrusted — never clamps an absurd playhead up to the
+    /// live edge, which is what made the scrubber jump on the next ←/→.
+    static func viewedAbsoluteDate(
+        media: PlayableMedia,
+        playerTime: TimeInterval,
+        fallback: Date?,
+        now: Date = Date()
+    ) -> Date {
+        if media.isLive { return now }
+        guard let start = media.archiveWindowStart else { return now }
+        guard isPlayerTimeTrusted(media: media, playerTime: playerTime, now: now) else {
+            return fallback ?? start
+        }
+        let t = playerTime.isFinite ? max(0, playerTime) : 0
+        return start.addingTimeInterval(t)
     }
 
     /// Clamp `date` into `[earliest, liveEdge]`.

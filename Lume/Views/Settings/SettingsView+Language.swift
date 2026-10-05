@@ -247,7 +247,7 @@ import SwiftUI
                     }
                     .buttonStyle(.borderless)
                     .foregroundStyle(.secondary)
-                    .accessibilityLabel("Remove \(name)")
+                    .accessibilityLabel(AppInterfaceLanguage.localizedFormat("Remove %@", name))
                 }
             #else
                 self

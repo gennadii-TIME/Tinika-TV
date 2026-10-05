@@ -42,8 +42,8 @@ enum LiveSurfMode: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .channelUpDown: String(localized: "Channel Up/Down")
-        case .listOrder: String(localized: "List Order")
+        case .channelUpDown: AppInterfaceLanguage.localized("Channel Up/Down")
+        case .listOrder: AppInterfaceLanguage.localized("List Order")
         }
     }
 

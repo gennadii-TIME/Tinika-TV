@@ -7,14 +7,14 @@
 //  since Apple TV can't open a URL itself). One source of truth so the two
 //  surfaces can never drift.
 //
-//  Modified for Tinika TV: 2026-10-04 — website, privacy and support point at
-//  the Tinika-TV repository and GitHub Pages.
+//  Modified for Tinika TV: 2026-10-04 — support website is tinika.lv; privacy on
+//  GitHub Pages until the company site hosts its own policy page.
 //
 
 import Foundation
 
 nonisolated enum SupportInfo {
-    static let website = "https://gennadii-time.github.io/Tinika-TV/"
+    static let website = "https://tinika.lv"
     static let email = "support@tinika.lv"
 
     /// Public privacy policy. Source of truth in-repo: `docs/PRIVACY.md` (+ `docs/privacy.html`).
@@ -25,7 +25,7 @@ nonisolated enum SupportInfo {
     static let appStoreReview = "https://github.com/gennadii-TIME/Tinika-TV"
 
     /// Scheme-stripped forms for compact on-screen display (QR / tvOS About).
-    static let websiteDisplay = "gennadii-time.github.io/Tinika-TV"
+    static let websiteDisplay = "tinika.lv"
     static let appStoreDisplay = "GitHub"
 
     static var websiteURL: URL? {

@@ -109,7 +109,7 @@ final class ProfileManager {
     func bootstrap() async {
         let result = await coordinator.bootstrapProfiles(
             preferredActiveID: ActiveProfileStore.current,
-            defaultName: String(localized: "Profile 1", comment: "Name of the automatically-created first profile")
+            defaultName: AppInterfaceLanguage.localized("Profile 1")
         )
         ActiveProfileStore.current = result.activeProfileID
         activeProfileID = result.activeProfileID

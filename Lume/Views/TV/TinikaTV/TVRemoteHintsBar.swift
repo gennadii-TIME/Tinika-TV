@@ -45,9 +45,13 @@
             .init("select", systemImage: "circle.fill", label: "Select")
         ]
 
-        /// Compact live OSD: ←/→ Scrub · OK Pause/Continue · [Back Go Live] · ↑/↓ Channels.
+        /// Compact live OSD: ←/→ Scrub · OK Pause/Continue · [Back Go Live] ·
+        /// ↑/↓ Channels · Hold OK timed mute.
         /// Go Live slot is always present (invisible when not applicable) so
         /// neighbouring hints keep size and position.
+        ///
+        /// While timed-mute is active with the OSD *hidden*, short Select
+        /// unmutes (engine `handleHiddenOSDSelect`) — that path has no hint bar.
         static func playerOSD(isPlaying: Bool, showsGoLive: Bool = false) -> [TVRemoteHint] {
             [
                 .init("scrub", systemImage: "arrow.left.arrow.right", label: "Scrub"),
@@ -62,7 +66,12 @@
                     label: "Go Live",
                     isVisible: showsGoLive
                 ),
-                .init("surf", systemImage: "arrow.up.arrow.down", label: "Channels")
+                .init("surf", systemImage: "arrow.up.arrow.down", label: "Channels"),
+                .init(
+                    "timedMute",
+                    systemImage: "speaker.slash",
+                    label: "Hold OK for timed mute"
+                )
             ]
         }
 

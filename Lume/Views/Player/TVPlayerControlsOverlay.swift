@@ -132,9 +132,13 @@
             ))
             .modifier(TVScrubMoveCommands(
                 isScrubbing: isScrubbing && !usesCompactLiveOSD,
-                onMove: moveScrub,
-                onMoveUp: { cancelScrub() }
+                onMove: handleClassicScrubMove,
+                onMoveUp: {
+                    TVScrubArrowInput.shared.forceStop(scheduleCommit: false)
+                    cancelScrub()
+                }
             ))
+            .background(TVScrubArrowInputProbe())
             .onChange(of: panelCloseToken) {
                 handleMenuFromHost()
             }
@@ -148,12 +152,14 @@
                 controlSession.noteControlsOpened(mediaIsCatchup: media.isCatchup)
                 timedMute.reassert(apply: applyEngineMute)
                 syncCompactFocusModel(resetSelection: true)
+                bindScrubArrowInput()
                 if usesCompactLiveOSD {
                     TVCompactOSDNavRelay.shared.onArrow = { handleCompactOSDMove($0) }
                 }
                 Task { @MainActor in applyCompactFocusToFocusState() }
             }
             .onDisappear {
+                unbindScrubArrowInput()
                 if TVCompactOSDNavRelay.shared.onArrow != nil {
                     TVCompactOSDNavRelay.shared.onArrow = nil
                 }
@@ -163,9 +169,16 @@
             .onChange(of: media.id) {
                 timedMute.reassert(apply: applyEngineMute)
                 syncCompactFocusModel(resetSelection: true)
+                refreshScrubArrowArming()
             }
             .onChange(of: canSeekMedia) { _, _ in
                 syncCompactFocusModel(resetSelection: false)
+            }
+            .onChange(of: openTab) { _, _ in
+                refreshScrubArrowArming()
+            }
+            .onChange(of: isScrubbing) { _, _ in
+                refreshScrubArrowArming()
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
@@ -178,6 +191,10 @@
                 autoReturnToLiveIfNeeded()
             }
             .onChange(of: controlSession.phase) { _, phase in
+                if phase != .scrubPreview {
+                    TVScrubArrowInput.shared.forceStop(scheduleCommit: false)
+                }
+                refreshScrubArrowArming()
                 switch phase {
                 case .scrubPreview, .seeking, .returningToLive:
                     onPanelOpenChange(true)
@@ -961,14 +978,14 @@
                         timedMute.mute(forMinutes: minutes, apply: applyEngineMute)
                         onResetHideTimer()
                     } label: {
-                        Text("\(minutes) min")
+                        Text(String(format: String(localized: "%lld min"), minutes))
                     }
                 }
                 Button("Cancel", role: .cancel) {}
             } label: {
                 if let label = timedMute.remainingLabel {
                     Label {
-                        Text("Muted \(label)")
+                        Text(String(format: String(localized: "Muted %@"), label))
                     } icon: {
                         Image(systemName: "speaker.slash.fill")
                     }
@@ -1071,8 +1088,8 @@
         var onLongPress: (() -> Void)?
         /// Measured width of the floating offset label (compact scrub only).
         @State private var compactOffsetLabelWidth: CGFloat = 120
-        /// Visual scrub fraction — lags logical target with a short linear ease
-        /// so the knob glides; logic (`previewAbsoluteTime`) stays immediate.
+        /// Visual scrub fraction. While scrubbing it tracks the logical target
+        /// immediately so hold preview (10–60×) never leaves the knob behind.
         @State private var visualFraction: Double = 0
         @State private var hasVisualFraction = false
 
@@ -1150,18 +1167,10 @@
             }
         }
 
-        /// Single press: ~0.18 s linear glide. Hold: retarget from the current
-        /// visual position so repeat events do not snap or stutter.
+        /// Follow the logical scrub target without ease — at hold rates up to
+        /// 60× a 0.18 s glide trails the preview and looks stuck behind.
         private func retargetVisualFraction(to target: Double) {
-            let clamped = min(max(target, 0), 1)
-            guard isScrubbing else {
-                snapVisualFraction(to: clamped)
-                return
-            }
-            withAnimation(.linear(duration: 0.18)) {
-                visualFraction = clamped
-                hasVisualFraction = true
-            }
+            snapVisualFraction(to: target)
         }
 
         private struct OptionalLongPress: ViewModifier {
@@ -1360,6 +1369,8 @@
                 return min(max(displayedAbsolute.timeIntervalSince(window.start) / total, 0), 1)
             }
             let total = max(clock.duration, 1)
+            // Prefer scrub target while previewing; VOD commit writes `clock`
+            // before clearing scrub, so idle path is already correct.
             let reference = isScrubbing ? scrubTarget : clock.current
             return min(max(reference / total, 0), 1)
         }

@@ -97,14 +97,39 @@ import SwiftUI
             return cycle[(index + 1) % cycle.count]
         }
 
-        /// OSD chrome timing for the live player panel.
+        /// App language + OSD chrome timing for the live player panel.
         var tvInterfaceDetail: some View {
             VStack(alignment: .leading, spacing: 8) {
                 TVSettingsSectionLabel("Interface")
+
+                Button {
+                    showingInterfaceLanguageList = true
+                } label: {
+                    HStack(spacing: 16) {
+                        Text("Language")
+                        Spacer(minLength: 16)
+                        Text(verbatim: AppInterfaceLanguage.resolve(interfaceLanguageRaw).nativeDisplayName)
+                            .font(.system(size: TVSettingsMetrics.secondaryFontSize))
+                            .lineLimit(1)
+                            .opacity(0.6)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(TVSettingsRowButtonStyle())
+
+                Text("Default is English. The whole app uses the language you choose, including after restart.")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, TVSettingsMetrics.rowHPadding)
+                    .padding(.top, 6)
+                    .padding(.bottom, 18)
+
                 TVOptionCycleRow(
                     title: "Panel Display Time",
-                    valueLabel: String(
-                        format: String(localized: "%lld seconds"),
+                    valueLabel: AppInterfaceLanguage.localizedFormat(
+                        "%lld seconds",
                         Int64(PlayerSettings.OSD.clamped(osdHideDelaySeconds))
                     )
                 ) {
@@ -116,6 +141,15 @@ import SwiftUI
                     .padding(.horizontal, TVSettingsMetrics.rowHPadding)
                     .padding(.top, 6)
             }
+        }
+
+        /// Full list of the 10 interface languages. Select applies and closes;
+        /// Menu / sidebar focus dismisses without changing the stored language.
+        var tvInterfaceLanguageListDetail: some View {
+            TVInterfaceLanguageList(
+                selectionRaw: $interfaceLanguageRaw,
+                onClose: { showingInterfaceLanguageList = false }
+            )
         }
 
         func nextOSDHideDelaySeconds(after raw: Int) -> Int {
@@ -247,14 +281,14 @@ import SwiftUI
 
                     TVOptionCycleRow(
                         title: "Refresh",
-                        valueLabel: String(localized: frequency.label)
+                        valueLabel: AppInterfaceLanguage.localized(frequency.label)
                     ) { freqRaw = PlayerOptionCycle.next(freqRaw, in: SyncFrequency.self) }
 
                     Button {
                         sync.syncNow()
                     } label: {
                         HStack(spacing: 16) {
-                            Text(sync.isSyncing ? "Refreshing…" : "Refresh Now")
+                            Text(sync.isSyncing ? LocalizedStringKey("Refreshing…") : LocalizedStringKey("Refresh Now"))
                             Spacer(minLength: 0)
                             if sync.isSyncing {
                                 ProgressView()
@@ -286,7 +320,7 @@ import SwiftUI
             if let last = sync.lastRefresh {
                 return last.formatted(.relative(presentation: .named))
             }
-            return String(localized: "Never")
+            return AppInterfaceLanguage.localized("Never")
         }
     }
 

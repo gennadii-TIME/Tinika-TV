@@ -185,7 +185,7 @@ nonisolated enum PlaylistStreamFormat: String, CaseIterable, Identifiable, Codab
 
     var displayName: String {
         switch self {
-        case .automatic: String(localized: "Automatic")
+        case .automatic: AppInterfaceLanguage.localized("Automatic")
         case .hls: "HLS"
         case .mpegTS: "MPEG-TS"
         }

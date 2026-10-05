@@ -5,6 +5,10 @@ import LumeEngine
 import OSLog
 import SwiftUI
 
+#if canImport(UIKit)
+    import UIKit
+#endif
+
 /// Holds the engine's active subtitle cue text, refreshed from the coordinator's
 /// 10 Hz playback tick. Deliberately a separate `ObservableObject` from
 /// `LumeEngineCoordinator`: were the cue text `@Published` on the coordinator,
@@ -115,6 +119,11 @@ final class LumeEngineCoordinator: NSObject, ObservableObject {
 
     /// The engine's video surface for the hosting representable.
     private(set) var displayLayer: LumeDisplayLayer?
+    /// Weak host from the SwiftUI representable — used to snapshot a freeze
+    /// frame before a URL swap tears the display layer down.
+    #if canImport(UIKit)
+        weak var freezeHostView: UIView?
+    #endif
 
     private var session: PlayerSession?
     #if os(iOS) || os(macOS) || os(tvOS)
@@ -147,6 +156,19 @@ final class LumeEngineCoordinator: NSObject, ObservableObject {
     private var externalSubtitle: ExternalSubtitle?
 
     // MARK: Lifecycle
+
+    /// Snapshot the current display layer before `tearDown` removes it. A new
+    /// URL is always a new `PlayerSession` (engine invariant), so the surface
+    /// cannot keep the outgoing frame on its own.
+    #if canImport(UIKit)
+        func captureFreezeFrame() -> UIImage? {
+            if let host = freezeHostView, let image = PlayerFreezeFrame.capture(view: host) {
+                return image
+            }
+            guard let layer = displayLayer else { return nil }
+            return PlayerFreezeFrame.capture(layer: layer)
+        }
+    #endif
 
     func configure(media: PlayableMedia) {
         tearDown()

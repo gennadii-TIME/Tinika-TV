@@ -76,13 +76,9 @@ nonisolated struct TMDBClient {
         return raw?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// The TMDB `language` value for the user's current preferred language.
-    ///
-    /// `Locale.preferredLanguages.first` reflects the per-app language override
-    /// from iOS Settings when one is set, falling back to the system language —
-    /// which is exactly the behaviour we want.
+    /// The TMDB `language` value for the in-app interface language (default English).
     static func preferredLanguageCode() -> String {
-        tmdbLanguageCode(from: Locale.preferredLanguages.first ?? "en-US")
+        tmdbLanguageCode(from: AppInterfaceLanguage.current.localeIdentifier)
     }
 
     /// Normalises a BCP-47 language identifier (e.g. `de-DE`, `zh-Hans-CN`)
@@ -113,7 +109,7 @@ nonisolated struct TMDBClient {
     /// shows titles already in the library, so a wider net surfaces more of them.
     func trending(_ media: MediaType, timeWindow: TimeWindow = .week, pages: Int = 5) async throws -> [TrendingTitle] {
         let basePath = "/trending/\(media.rawValue)/\(timeWindow.rawValue)"
-        let cacheKey = "\(basePath)-\(pages)-\(Locale.preferredLanguages.first ?? "")"
+        let cacheKey = "\(basePath)-\(pages)-\(AppInterfaceLanguage.current.localeIdentifier)"
         if let cached = await TrendingFeedCache.shared.titles(for: cacheKey, maxAge: 30 * 60) {
             return cached
         }

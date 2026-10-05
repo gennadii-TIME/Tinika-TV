@@ -14,9 +14,9 @@ enum CategoryType: String, Codable, CaseIterable, Identifiable {
     /// User-facing label, matching the tab names.
     var label: String {
         switch self {
-        case .live: "Live TV"
-        case .vod: "Movies"
-        case .series: "Series"
+        case .live: AppInterfaceLanguage.localized("Live TV")
+        case .vod: AppInterfaceLanguage.localized("Movies")
+        case .series: AppInterfaceLanguage.localized("Series")
         }
     }
 
@@ -24,7 +24,11 @@ enum CategoryType: String, Codable, CaseIterable, Identifiable {
     /// itself stays a plain `String` because it is also interpolated into
     /// composed strings elsewhere.
     var localizedLabel: LocalizedStringKey {
-        LocalizedStringKey(label)
+        switch self {
+        case .live: "Live TV"
+        case .vod: "Movies"
+        case .series: "Series"
+        }
     }
 }
 

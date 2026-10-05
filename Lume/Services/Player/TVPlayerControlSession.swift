@@ -40,9 +40,14 @@ final class TVPlayerControlSession: ObservableObject {
 
     private(set) var wasPlayingBeforeScrub = false
     private(set) var scrubTarget: TimeInterval = 0
-    private var scrubStepLevel = 0
-    private var scrubLastDirection: RemoteDirectionGate.Direction?
-    private var scrubResetTask: Task<Void, Never>?
+    /// Last trusted on-screen absolute time. Seeded from the committed scrub
+    /// target in `finishSeek`, then advanced by trusted engine playheads while
+    /// idle. Used so a stale post-rebuild `clock.current` cannot yank the next
+    /// scrub session to the live edge.
+    private(set) var playheadAnchorAbsolute: Date?
+    /// Wall-clock moment when `playheadAnchorAbsolute` was last trusted/seeded —
+    /// advances the fallback while the engine playhead is still untrusted.
+    private var playheadAnchorWallDate: Date?
     /// Fires after ~600 ms without further ←/→ to auto-confirm the preview.
     private var scrubAutoCommitTask: Task<Void, Never>?
 
@@ -174,6 +179,78 @@ final class TVPlayerControlSession: ObservableObject {
 
     // MARK: - Scrub preview
 
+    /// Absolute time currently being watched — idle knob + new scrub anchor.
+    func viewedAbsoluteDate(
+        media: PlayableMedia,
+        playerTime: TimeInterval,
+        now: Date = Date()
+    ) -> Date {
+        let fallback: Date? = {
+            guard let anchor = playheadAnchorAbsolute else { return nil }
+            guard let wall = playheadAnchorWallDate else { return anchor }
+            // While the engine still reports a stale playhead after a URL
+            // rebuild, advance the committed seek target by wall-clock so a
+            // 20 s watch does not restart scrub at the original seek point.
+            let elapsed = max(0, now.timeIntervalSince(wall))
+            return min(anchor.addingTimeInterval(elapsed), now)
+        }()
+
+        let trusted = isEnginePlayheadTrusted(
+            media: media,
+            playerTime: playerTime,
+            now: now
+        )
+        let date: Date
+        if trusted, let start = media.archiveWindowStart {
+            let t = playerTime.isFinite ? max(0, playerTime) : 0
+            date = start.addingTimeInterval(t)
+        } else if trusted {
+            date = LiveTimeshift.absolutePlaybackDate(media: media, playerTime: playerTime, now: now)
+        } else {
+            // Do *not* call LiveTimeshift.viewedAbsoluteDate here — its trust
+            // check is only the archive window, so an in-window leftover
+            // (~3500 s after an hour-back seek) would be accepted again.
+            date = fallback ?? media.archiveWindowStart
+                ?? LiveTimeshift.absolutePlaybackDate(media: media, playerTime: 0, now: now)
+        }
+
+        // Freeze the anchor while scrubbing / seeking so the preview origin and
+        // the committed seek target are not overwritten by a live clock tick.
+        if trusted, !isScrubbing, !isSeekInFlight {
+            playheadAnchorAbsolute = date
+            playheadAnchorWallDate = now
+        }
+        return date
+    }
+
+    /// Engine playhead is usable only when it sits inside the archive window
+    /// *and* stays coherent with wall-clock progress from the last trusted
+    /// anchor. A post-rebuild sample of ~3500 s inside a 1-hour window is
+    /// "in range" but still jumps the knob toward the live edge.
+    private func isEnginePlayheadTrusted(
+        media: PlayableMedia,
+        playerTime: TimeInterval,
+        now: Date
+    ) -> Bool {
+        guard LiveTimeshift.isPlayerTimeTrusted(media: media, playerTime: playerTime, now: now)
+        else { return false }
+        guard let start = media.archiveWindowStart,
+              let anchor = playheadAnchorAbsolute,
+              let wall = playheadAnchorWallDate
+        else {
+            // No anchor yet (first open): only accept a near-start playhead so a
+            // leftover live sample cannot become the first "trusted" point.
+            guard media.archiveWindowStart != nil else { return true }
+            return playerTime.isFinite && playerTime >= 0 && playerTime <= 30
+        }
+        let expected = max(0, anchor.timeIntervalSince(start)) + max(0, now.timeIntervalSince(wall))
+        // Jumped far ahead of real-time progress (typical stale/live leftover).
+        if playerTime > expected + 30 { return false }
+        // Stuck far behind while wall-clock moved — keep wall-advanced fallback.
+        if expected > 5, playerTime + 15 < expected { return false }
+        return true
+    }
+
     @discardableResult
     func beginScrub(
         absolute: Date,
@@ -182,6 +259,8 @@ final class TVPlayerControlSession: ObservableObject {
         isPlaying: Bool
     ) -> Bool {
         guard phase == .controls || phase == .live || phase == .timeshift else {
+            // Already scrubbing: keep the existing preview so a second ←/→
+            // continues from the nudged target rather than snapping back.
             if phase == .scrubPreview { return true }
             return false
         }
@@ -189,13 +268,13 @@ final class TVPlayerControlSession: ObservableObject {
         previewMoveCount = 0
         wasPlayingBeforeScrub = isPlaying
         previewAbsoluteTime = absolute
+        playheadAnchorAbsolute = absolute
+        playheadAnchorWallDate = Date()
         if let windowStart {
             scrubTarget = absolute.timeIntervalSince(windowStart)
         } else {
             scrubTarget = playerTime.isFinite ? playerTime : 0
         }
-        scrubStepLevel = 0
-        scrubLastDirection = nil
         return transition(to: .scrubPreview, reason: "begin-scrub")
     }
 
@@ -221,38 +300,28 @@ final class TVPlayerControlSession: ObservableObject {
         )
     }
 
-    /// Scrub step for ←/→. Absolute (live/timeshift) uses OTT-Play hold
-    /// acceleration of 1 → 3 → 10 minutes; VOD keeps finer 10 s × hold level.
-    /// Each call reschedules the auto-commit debounce.
+    /// Fixed short-press scrub step (10 s). Continuous hold is driven by
+    /// `TVScrubArrowInput` with a 10→60 ramp; each short step reschedules the
+    /// idle auto-commit debounce.
     func noteScrubStep(
-        direction: RemoteDirectionGate.Direction,
-        absoluteTimeline: Bool
+        direction _: RemoteDirectionGate.Direction,
+        absoluteTimeline _: Bool
     ) -> TimeInterval {
         guard phase == .scrubPreview, !commitInFlight else { return 0 }
-        if direction != scrubLastDirection { scrubStepLevel = 0 }
-        scrubLastDirection = direction
-        scrubStepLevel = min(scrubStepLevel + 1, 40)
-        let step: TimeInterval
-        if absoluteTimeline {
-            let minutes: Double
-            switch scrubStepLevel {
-            case 1 ... 3: minutes = 1
-            case 4 ... 8: minutes = 3
-            default: minutes = 10
-            }
-            step = minutes * 60
-        } else {
-            step = 10.0 * Double(max(scrubStepLevel, 1))
-        }
-        scrubResetTask?.cancel()
-        scrubResetTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 450_000_000)
-            guard !Task.isCancelled else { return }
-            scrubStepLevel = 0
-            scrubLastDirection = nil
-        }
         scheduleAutoCommit()
-        return step
+        return TVScrubArrowSession.shortStepSeconds
+    }
+
+    /// Hold released — cancel any pending idle debounce. The overlay commits
+    /// the preview immediately (no 600 ms wait).
+    func noteHoldEnded() {
+        guard phase == .scrubPreview else { return }
+        cancelAutoCommit()
+    }
+
+    /// Suppress auto-commit for the duration of an arrow hold.
+    func noteHoldStarted() {
+        cancelAutoCommit()
     }
 
     /// Call after a relative preview nudge that did not go through `noteScrubStep`
@@ -336,7 +405,9 @@ final class TVPlayerControlSession: ObservableObject {
         let generation = seekGeneration
         let previous = seekTask
         previous?.cancel()
-        cancelScrubChrome()
+        // Keep `previewAbsoluteTime` / `scrubTarget` pinned through the seek so
+        // the OSD knob stays on the chosen point until `finishSeek` / `failSeek`.
+        cancelAutoCommit()
         let next: TVPlayerControlPhase = asReturnToLive ? .returningToLive : .seeking
         transition(to: next, reason: reason)
         // Unwind the cancelled seek before starting the next — otherwise two
@@ -383,7 +454,21 @@ final class TVPlayerControlSession: ObservableObject {
         )
     }
 
+    /// Pin the OSD knob to `absolute` for an in-flight seek that did not come
+    /// from scrub preview (Start Over / programme jump). `finishSeek` seeds the
+    /// idle playhead anchor from this value.
+    func pinSeekPreview(_ absolute: Date) {
+        previewAbsoluteTime = absolute
+    }
+
     func finishSeek(mediaIsCatchup: Bool, keepControls: Bool) {
+        // Seed the idle playhead from the committed preview *before* clearing
+        // it — the engine clock is often still stale for a moment after the
+        // timeshift URL swap, and the next ←/→ must start from this point.
+        if let preview = previewAbsoluteTime {
+            playheadAnchorAbsolute = preview
+            playheadAnchorWallDate = Date()
+        }
         previewAbsoluteTime = nil
         commitInFlight = false
         if keepControls {
@@ -405,6 +490,8 @@ final class TVPlayerControlSession: ObservableObject {
 
     func finishReturnToLive(keepControls: Bool) {
         previewAbsoluteTime = nil
+        playheadAnchorAbsolute = nil
+        playheadAnchorWallDate = nil
         commitInFlight = false
         transition(to: keepControls ? .controls : .live, reason: "finish-return-live")
     }
@@ -430,6 +517,12 @@ final class TVPlayerControlSession: ObservableObject {
         seekTask = nil
         cancelScrubChrome()
         previewAbsoluteTime = nil
+        // Catchup/timeshift swaps seed the anchor from archive start once the
+        // overlay sees the new media; live clears it.
+        if !mediaIsCatchup {
+            playheadAnchorAbsolute = nil
+            playheadAnchorWallDate = nil
+        }
         commitInFlight = false
         autoReturnConsumed = false
         transition(to: mediaIsCatchup ? .timeshift : .live, reason: "new-stream")
@@ -480,12 +573,8 @@ final class TVPlayerControlSession: ObservableObject {
     }
 
     private func cancelScrubChrome() {
-        scrubResetTask?.cancel()
-        scrubResetTask = nil
         scrubAutoCommitTask?.cancel()
         scrubAutoCommitTask = nil
-        scrubStepLevel = 0
-        scrubLastDirection = nil
         previewAbsoluteTime = nil
     }
 }

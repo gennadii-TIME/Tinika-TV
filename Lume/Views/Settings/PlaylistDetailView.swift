@@ -181,7 +181,7 @@ struct PlaylistDetailView: View {
                 }
                 if isM3U {
                     LabeledContent("EPG URL") {
-                        Text(playlist.epgURL ?? String(localized: "None"))
+                        Text(playlist.epgURL ?? AppInterfaceLanguage.localized("None"))
                             .lineLimit(1)
                             .truncationMode(.middle)
                             .foregroundStyle(.secondary)

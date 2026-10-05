@@ -45,7 +45,7 @@ struct EPGSettingsView: View {
         guard !trimmedURL.isEmpty else { return }
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let source = EPGSource(
-            name: trimmedName.isEmpty ? String(localized: "Custom Guide") : trimmedName,
+            name: trimmedName.isEmpty ? AppInterfaceLanguage.localized("Custom Guide") : trimmedName,
             url: trimmedURL
         )
         modelContext.insert(source)
@@ -200,12 +200,12 @@ struct EPGSettingsView: View {
 
         private var subtitle: String {
             if source.syncStatus == .error {
-                return String(localized: "Last refresh failed")
+                return AppInterfaceLanguage.localized("Last refresh failed")
             }
             if let last = source.lastSyncDate {
                 return last.formatted(.relative(presentation: .named))
             }
-            return source.isManual ? source.url : String(localized: "From playlist")
+            return source.isManual ? source.url : AppInterfaceLanguage.localized("From playlist")
         }
     }
 
@@ -307,7 +307,7 @@ struct EPGSettingsView: View {
                                 .truncationMode(.middle)
                         }
                         Spacer(minLength: 0)
-                        Text(source.isEnabled ? "On" : "Off")
+                        Text(source.isEnabled ? LocalizedStringKey("On") : LocalizedStringKey("Off"))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -320,19 +320,19 @@ struct EPGSettingsView: View {
                         Image(systemName: "trash")
                     }
                     .buttonStyle(TVContentIconButtonStyle())
-                    .accessibilityLabel("Delete \(source.name)")
+                    .accessibilityLabel(AppInterfaceLanguage.localizedFormat("Delete %@", source.name))
                 }
             }
         }
 
         func tvSubtitle(_ source: EPGSource) -> String {
             if source.syncStatus == .error {
-                return String(localized: "Last refresh failed")
+                return AppInterfaceLanguage.localized("Last refresh failed")
             }
             if let last = source.lastSyncDate {
                 return last.formatted(.relative(presentation: .named))
             }
-            return source.isManual ? source.url : String(localized: "From playlist")
+            return source.isManual ? source.url : AppInterfaceLanguage.localized("From playlist")
         }
 
         var tvAddSection: some View {

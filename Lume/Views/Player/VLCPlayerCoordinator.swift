@@ -220,6 +220,16 @@ final class VLCPlayerCoordinator: NSObject, ObservableObject {
         startStatsLogging()
     }
 
+    /// Snapshot the drawable host before `installMedia` clears the picture.
+    /// VLC's `saveVideoSnapshotAt` raises an ObjC exception when there is no
+    /// video output, so the host-view capture is the only safe path here.
+    #if canImport(UIKit)
+        func captureFreezeFrame() -> UIImage? {
+            guard let hostView else { return nil }
+            return PlayerFreezeFrame.capture(view: hostView)
+        }
+    #endif
+
     // MARK: - Reconnect
 
     /// React to a player state change for reconnect purposes: clear the budget

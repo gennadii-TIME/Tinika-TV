@@ -50,7 +50,7 @@ nonisolated struct PlayerVideoInfo: Equatable {
     var captionParts: [String] {
         var parts = badgeParts
         if let frameRateText {
-            parts.append(String(localized: "\(frameRateText) fps"))
+            parts.append(String(format: String(localized: "%@ fps"), frameRateText))
         }
         return parts
     }
@@ -60,7 +60,9 @@ nonisolated struct PlayerVideoInfo: Equatable {
     var spokenCaptionParts: [String] {
         var parts = badgeParts
         if let frameRateText {
-            parts.append(String(localized: "\(frameRateText) frames per second"))
+            parts.append(
+                String(format: String(localized: "%@ frames per second"), frameRateText)
+            )
         }
         return parts
     }

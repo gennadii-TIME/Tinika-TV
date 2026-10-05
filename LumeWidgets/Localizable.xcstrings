@@ -14,6 +14,12 @@
             "value" : "%lld Downloads abgeschlossen"
           }
         },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Downloads Complete"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -50,6 +56,12 @@
             "value" : "%lld downloads concluídos"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld загрузок завершено"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -65,6 +77,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld Downloads fehlgeschlagen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Downloads Failed"
           }
         },
         "es" : {
@@ -103,6 +121,12 @@
             "value" : "%lld downloads falharam"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld загрузок не удалось"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -118,6 +142,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld fehlgeschlagen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld failed"
           }
         },
         "es" : {
@@ -156,6 +186,12 @@
             "value" : "%lld falharam"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld с ошибкой"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -171,6 +207,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "+%lld weitere"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld more"
           }
         },
         "es" : {
@@ -209,6 +251,12 @@
             "value" : "+%lld mais"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ещё +%lld"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -224,6 +272,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Download abgeschlossen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Complete"
           }
         },
         "es" : {
@@ -262,6 +316,12 @@
             "value" : "Download concluído"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Загрузка завершена"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -277,6 +337,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Download fehlgeschlagen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download Failed"
           }
         },
         "es" : {
@@ -315,6 +381,12 @@
             "value" : "Falha no download"
           }
         },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ошибка загрузки"
+          }
+        },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
@@ -327,6 +399,12 @@
       "comment" : "Badge marking a live TV stream",
       "localizations" : {
         "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LIVE"
+          }
+        },
+        "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "LIVE"
@@ -366,6 +444,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "AO VIVO"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ЭФИР"
           }
         },
         "zh-Hans" : {

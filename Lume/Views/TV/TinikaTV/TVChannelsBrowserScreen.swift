@@ -234,7 +234,7 @@
                     ForEach(virtualItems) { item in
                         Button {
                             rail = item
-                            Task { @MainActor in focus = .category(item.id) }
+                            Task { @MainActor in focusAfterSelecting(item, from: .iconRail) }
                         } label: {
                             Image(systemName: item.icon)
                                 .font(.system(size: 24, weight: .semibold))
@@ -254,6 +254,9 @@
                    rail.id != item.id
                 {
                     rail = item
+                    if case .search = item {
+                        Task { @MainActor in focus = .searchField }
+                    }
                 }
             }
         }
@@ -274,7 +277,7 @@
                         ForEach(categoryItems) { item in
                             Button {
                                 rail = item
-                                Task { @MainActor in focus = .channel(focusedChannelID ?? "") }
+                                Task { @MainActor in focusAfterSelecting(item, from: .categories) }
                             } label: {
                                 HStack(spacing: 12) {
                                     Image(systemName: item.icon)
@@ -308,6 +311,10 @@
                    rail.id != item.id
                 {
                     rail = item
+                    if case .search = item {
+                        // Land in the TextField so the viewer can type immediately.
+                        Task { @MainActor in focus = .searchField }
+                    }
                 }
             }
         }
@@ -670,6 +677,29 @@
                 categoryCounts = counts
 
                 applyChannelsFromIndex(for: rail, debounceEPG: false)
+            }
+        }
+
+        private enum RailActivationSource {
+            case iconRail
+            case categories
+        }
+
+        /// After choosing Search, put focus in the TextField so the keyboard /
+        /// dictation can fill it. Other rails keep the previous hand-off.
+        private func focusAfterSelecting(
+            _ item: TVChannelRailItem,
+            from source: RailActivationSource
+        ) {
+            if case .search = item {
+                focus = .searchField
+                return
+            }
+            switch source {
+            case .iconRail:
+                focus = .category(item.id)
+            case .categories:
+                focus = .channel(focusedChannelID ?? "")
             }
         }
 

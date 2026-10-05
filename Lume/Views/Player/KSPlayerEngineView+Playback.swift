@@ -69,28 +69,41 @@ extension KSPlayerEngineView {
     /// (no advance → spinner stays). Cheap no-op once the spinner is already down.
     func notePlaybackProgress(_ current: TimeInterval) {
         guard current.isFinite, !isSeeking else { return }
+        let previous = tick.lastPlayhead
         defer { tick.lastPlayhead = current }
-        guard isBuffering, tick.lastPlayhead >= 0, current > tick.lastPlayhead else { return }
+        // Playhead motion after a URL swap is the first reliable proof that the
+        // new session has composited a frame — release the freeze hold here so
+        // we never cover fresh video with a stale picture, and never uncover
+        // black before that frame exists.
+        #if canImport(UIKit)
+            if freezeFrame != nil, hasSeenReadyToPlay, previous >= 0, current != previous {
+                clearFreezeFrame()
+            }
+        #endif
+        guard isBuffering, previous >= 0, current > previous else { return }
         markPlaybackStarted()
         setBuffering(false)
     }
 
     /// Record that the stream has produced its first frame. Unlocks the controls
     /// for good and disarms the startup watchdog (a dead-stream timeout is moot
-    /// once frames are flowing). Idempotent for the chrome gate; always clears
-    /// a held freeze-frame once the new session has seen `.readyToPlay`.
+    /// once frames are flowing). Idempotent for the chrome gate.
     ///
     /// Guarded by `hasSeenReadyToPlay` so a stale `.bufferFinished` callback
     /// from the *previous* session (which arrives after `retryPlayback()` resets
     /// `hasStartedPlayback`) cannot prematurely cancel the watchdog before the
     /// new session's prepare cycle has started.
+    ///
+    /// Freeze-frame release is *not* done here: `.readyToPlay` / `.bufferFinished`
+    /// can land before the first composited frame, which would flash black under
+    /// a cleared overlay. `notePlaybackProgress` drops the hold once the playhead
+    /// proves the new session is painting.
     func markPlaybackStarted() {
         guard hasSeenReadyToPlay else { return }
         if !hasStartedPlayback {
             hasStartedPlayback = true
             PlaybackQoE.shared.noteFirstFrame()
         }
-        clearFreezeFrame()
         cancelStartupWatchdog()
     }
 
@@ -102,19 +115,21 @@ extension KSPlayerEngineView {
         #endif
     }
 
-    /// Snapshot the current player view before a URL swap so the outgoing frame
-    /// covers Color.black until the first frame of the new stream arrives.
-    func captureFreezeFrame() {
+    /// Snapshot the current player *before* handing KSPlayer a new URL.
+    /// Prefers the decoded pixel buffer (Metal-safe); falls back to a view
+    /// hierarchy capture. Near-black results are discarded.
+    func captureFreezeFrame() async {
         #if canImport(UIKit)
-            guard let view = coordinator.playerLayer?.player.view,
-                  view.bounds.width > 1, view.bounds.height > 1
-            else { return }
-            let format = UIGraphicsImageRendererFormat()
-            format.scale = view.window?.screen.scale ?? UIScreen.main.scale
-            format.opaque = true
-            let renderer = UIGraphicsImageRenderer(bounds: view.bounds, format: format)
-            freezeFrame = renderer.image { _ in
-                view.drawHierarchy(in: view.bounds, afterScreenUpdates: false)
+            if let cgImage = await coordinator.playerLayer?.player.thumbnailImageAtCurrentTime(),
+               let image = PlayerFreezeFrame.fromCGImage(cgImage)
+            {
+                freezeFrame = image
+                return
+            }
+            if let view = coordinator.playerLayer?.player.view,
+               let image = PlayerFreezeFrame.capture(view: view)
+            {
+                freezeFrame = image
             }
         #endif
     }

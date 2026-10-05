@@ -85,6 +85,10 @@ enum KSPlayerOptionsFactory {
         KSOptions.secondPlayerType = KSMEPlayer.self
         KSOptions.isAutoPlay = true
         KSOptions.isPipPopViewController = false
+        // Keep the last Metal frame across `replace(url:)` / shutdown so a
+        // timeshift scrub commit does not flash black while the new playlist
+        // joins. Overlay freeze-frame is the backup when this still clears.
+        KSOptions.isClearVideoWhereReplace = false
 
         #if DEBUG
             KSOptions.logLevel = .warning

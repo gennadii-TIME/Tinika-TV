@@ -314,7 +314,7 @@ struct PaywallView: View {
         if case .expired = premium.accessState {
             return PremiumAccessCopy.statusTitle(for: .expired)
         }
-        return String(localized: "30 days free")
+        return AppInterfaceLanguage.localized("30 days free")
     }
 }
 
@@ -355,18 +355,18 @@ enum PremiumAccessCopy {
     static func statusTitle(for state: PremiumAccessState, now: Date = Date()) -> String {
         switch state {
         case .loading:
-            return String(localized: "Checking access…")
+            return AppInterfaceLanguage.localized("Checking access…")
         case let .trial(until):
             let days = daysRemaining(until: until, now: now)
-            return String(localized: "Trial — \(days) days left")
+            return AppInterfaceLanguage.localizedFormat("Trial — %lld days left", days)
         case .purchased:
-            return String(localized: "Full version purchased")
+            return AppInterfaceLanguage.localized("Full version purchased")
         case .expired:
-            return String(localized: "Trial ended")
+            return AppInterfaceLanguage.localized("Trial ended")
         }
     }
 
     static func buyForeverTitle(displayPrice: String) -> String {
-        String(localized: "Buy Forever — \(displayPrice)")
+        AppInterfaceLanguage.localizedFormat("Buy Forever — %@", displayPrice)
     }
 }

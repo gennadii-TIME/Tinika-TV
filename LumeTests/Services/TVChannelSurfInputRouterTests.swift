@@ -202,4 +202,34 @@ final class TVChannelSurfInputRouterTests: XCTestCase {
         XCTAssertEqual(a.accepted, c.accepted)
         XCTAssertTrue(a.accepted)
     }
+
+    func testHiddenOSDSuccessfulSurfDoesNotShowControls() {
+        // Contract used by PlayerMediaSwapper.surf after a successful ↑/↓:
+        // clean-screen surfing must not raise the scrub OSD.
+        XCTAssertFalse(
+            TVChannelSurfChromePolicy.shouldShowControlsAfterSuccessfulVerticalSurf()
+        )
+        XCTAssertTrue(
+            TVChannelSurfChromePolicy.shouldShowControlsWhenVerticalSurfUnavailable()
+        )
+    }
+
+    func testSuccessfulVerticalSurfShowControlsCallbackIsSkipped() {
+        var showControlsCount = 0
+        let showControls = { showControlsCount += 1 }
+
+        // Mirror the post-select branch in PlayerMediaSwapper.surf for ↑/↓.
+        if TVChannelSurfChromePolicy.shouldShowControlsAfterSuccessfulVerticalSurf() {
+            showControls()
+        }
+        XCTAssertEqual(
+            showControlsCount, 0,
+            "↑/↓ with a resolved neighbour must not invoke showControls"
+        )
+
+        if TVChannelSurfChromePolicy.shouldShowControlsWhenVerticalSurfUnavailable() {
+            showControls()
+        }
+        XCTAssertEqual(showControlsCount, 1)
+    }
 }

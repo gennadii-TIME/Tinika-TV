@@ -85,10 +85,19 @@ struct VLCPlayerEngineView: View {
     @State var isPanelOpen = false
     /// Bumped to ask the overlay to close its open panel (Menu/back press).
     @State private var panelCloseToken = 0
+    /// Last painted frame held across media reload so a timeshift scrub commit
+    /// does not flash Color.black before the new stream's first frame.
+    #if canImport(UIKit)
+        @State private var freezeFrame: UIImage?
+    #endif
     #if os(tvOS)
         @StateObject var controlSession = TVPlayerControlSession()
         @StateObject private var timedMute = TimedMuteController()
         @StateObject var surfRouter = TVChannelSurfInputRouter()
+        /// Long-press Select (OSD hidden) timed-mute picker.
+        @State private var isTimedMutePickerOpen = false
+        /// Mute menu visible but not focused until Select is released.
+        @State private var timedMutePickerAllowsFocus = false
     #endif
     // Serialises stream changes for this session — the Siri remote's channel
     // surfing and the on-screen transport controls share it, so two swaps can
@@ -141,6 +150,12 @@ struct VLCPlayerEngineView: View {
             VLCVideoContainer(coordinator: coordinator)
                 .ignoresSafeArea()
 
+            #if canImport(UIKit)
+                if let freezeFrame {
+                    PlayerFreezeFrame.Overlay(image: freezeFrame)
+                }
+            #endif
+
             // Always-present transparent layer that reliably catches taps
             // over the VLC render surface. A UIView/NSView representable can
             // otherwise swallow touches before SwiftUI's gesture sees them,
@@ -149,6 +164,23 @@ struct VLCPlayerEngineView: View {
             // but a tap at the very edges should still summon the controls.
             tapCatcher
                 .ignoresSafeArea()
+
+            #if os(tvOS)
+                // Persistent while timed mute is active — stays up with OSD hidden.
+                TVTimedMuteCornerIndicator(timedMute: timedMute)
+                    .zIndex(25)
+
+                if isTimedMutePickerOpen {
+                    TVTimedMutePickerOverlay(
+                        timedMute: timedMute,
+                        applyMute: { coordinator.isMuted = $0 },
+                        onDismiss: closeTimedMutePicker,
+                        allowsFocus: timedMutePickerAllowsFocus
+                    )
+                    .transition(.opacity)
+                    .zIndex(40)
+                }
+            #endif
 
             if isControlsVisible, !loadFailed {
                 controlsOverlay
@@ -223,14 +255,15 @@ struct VLCPlayerEngineView: View {
             scheduleHide()
             #if os(tvOS)
                 TVChannelSurfPressRelay.shared.onArrowPress = { direction, source in
-                    if isChannelBrowserOpen || isProgramGuideOpen || isPanelOpen {
+                    if isTimedMutePickerOpen
+                        || isChannelBrowserOpen || isProgramGuideOpen || isPanelOpen
+                    {
                         return
                     }
-                    if isControlsVisible {
-                        TVCompactOSDNavRelay.shared.handleArrow(direction)
-                    } else {
-                        handleChannelSurfInput(direction, source: source)
-                    }
+                    // ↑/↓ always share the surf router. Never route a window
+                    // twin into CompactOSDNavRelay — after a prior showControls
+                    // that mis-route re-armed the hide timer and pinned scrub.
+                    handleChannelSurfInput(direction, source: source)
                 }
             #endif
         }
@@ -262,7 +295,12 @@ struct VLCPlayerEngineView: View {
             seekPosition = 0
             isPanelOpen = false
             loadFailed = false
+            #if canImport(UIKit)
+                freezeFrame = coordinator.captureFreezeFrame()
+            #endif
             #if os(tvOS)
+                isTimedMutePickerOpen = false
+                timedMutePickerAllowsFocus = false
                 controlSession.resetForNewStream(mediaIsCatchup: newMedia.isCatchup)
                 if isControlsVisible {
                     controlSession.noteControlsOpened(mediaIsCatchup: newMedia.isCatchup)
@@ -272,11 +310,19 @@ struct VLCPlayerEngineView: View {
             coordinator.reload(media: newMedia)
             resetHideTimer()
         }
+        .onChange(of: coordinator.hasStartedPlayback) { _, started in
+            #if canImport(UIKit)
+                if started { freezeFrame = nil }
+            #endif
+        }
         .onChange(of: isControlsVisible) { _, visible in
             #if os(tvOS)
-                // Hand focus to the tap-catcher once the controls vanish so the
-                // remote can bring them back.
-                if !visible { Task { @MainActor in catcherFocused = true } }
+                if visible {
+                    isTimedMutePickerOpen = false
+                    timedMutePickerAllowsFocus = false
+                } else if !isTimedMutePickerOpen {
+                    Task { @MainActor in catcherFocused = true }
+                }
             #endif
         }
         // Handle the Menu/back button at the player root — the always-present
@@ -322,39 +368,64 @@ struct VLCPlayerEngineView: View {
     @ViewBuilder
     private var tapCatcher: some View {
         #if os(tvOS)
-            // tvOS has no touch surface: drive the overlay from the Siri
-            // remote. The catcher only takes focus while controls are
-            // hidden, so the control buttons stay reachable otherwise.
-            // A focusable Button reliably catches the Siri remote's Select
-            // (center) press; `tvRemoteMoveCommand` covers the directions,
-            // swipes among them unless the viewer turned those off. Disabled
-            // while the controls are up so the overlay's buttons own focus.
-            Button(action: showControls) {
-                Color.clear.contentShape(Rectangle())
-            }
-            .buttonStyle(InvisibleButtonStyle())
-            // Yield focus to the failure overlay's buttons when a stream dies.
-            .disabled(isControlsVisible || isChannelBrowserOpen || isProgramGuideOpen || loadFailed)
-            .focused($catcherFocused)
-            .tvRemoteMoveCommand { direction in
-                // Only while controls are hidden (catcher disabled when OSD is up).
-                // TVTeam: ← channels, → EPG, ↑/↓ surf.
-                if media.allowsLiveTVChrome, direction == .left {
-                    openChannelBrowser()
-                } else if media.allowsLiveTVChrome, direction == .right {
-                    openProgramGuide()
-                } else if media.isLive, direction == .up || direction == .down {
-                    handleChannelSurfInput(direction, source: .moveCommand)
-                } else {
-                    showControls()
-                }
-            }
+            TVPlayerHiddenOSDCatcher(
+                isEnabled: !isControlsVisible
+                    && !isChannelBrowserOpen
+                    && !isProgramGuideOpen
+                    && !loadFailed
+                    && !timedMutePickerAllowsFocus,
+                allowsLiveTVChrome: media.allowsLiveTVChrome,
+                isLive: media.isLive,
+                blocksDirectionalRemote: isTimedMutePickerOpen,
+                focus: $catcherFocused,
+                onShowControls: handleHiddenOSDSelect,
+                onLongSelect: openTimedMutePicker,
+                onLongSelectReleased: focusTimedMutePicker,
+                onOpenChannelBrowser: openChannelBrowser,
+                onOpenProgramGuide: openProgramGuide,
+                onChannelSurf: { handleChannelSurfInput($0, source: .moveCommand) }
+            )
         #else
             Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture { toggleControls() }
         #endif
     }
+
+    #if os(tvOS)
+        /// Short Select with OSD hidden. Volume ± are not delivered to tvOS apps
+        /// via public API, so while timed-mute is active a short Select cancels
+        /// the timer and restores audio instead of raising the OSD.
+        private func handleHiddenOSDSelect() {
+            if timedMute.isMuted {
+                timedMute.unmute(apply: { coordinator.isMuted = $0 })
+                return
+            }
+            showControls()
+        }
+
+        private func openTimedMutePicker() {
+            guard !isControlsVisible,
+                  !isChannelBrowserOpen,
+                  !isProgramGuideOpen,
+                  !loadFailed,
+                  !isTimedMutePickerOpen
+            else { return }
+            timedMutePickerAllowsFocus = false
+            isTimedMutePickerOpen = true
+        }
+
+        private func focusTimedMutePicker() {
+            guard isTimedMutePickerOpen else { return }
+            timedMutePickerAllowsFocus = true
+        }
+
+        private func closeTimedMutePicker() {
+            isTimedMutePickerOpen = false
+            timedMutePickerAllowsFocus = false
+            Task { @MainActor in catcherFocused = true }
+        }
+    #endif
 
     // MARK: - Controls Overlay
 
@@ -472,6 +543,9 @@ struct VLCPlayerEngineView: View {
     }
 
     func showControls() {
+        #if os(tvOS)
+            guard !isTimedMutePickerOpen else { return }
+        #endif
         guard !isControlsVisible else { resetHideTimer(); return }
         withAnimation(.easeInOut(duration: 0.2)) { isControlsVisible = true }
         #if os(tvOS)
@@ -500,6 +574,10 @@ struct VLCPlayerEngineView: View {
             return
         }
         #if os(tvOS)
+            if isTimedMutePickerOpen {
+                closeTimedMutePicker()
+                return
+            }
             if isProgramGuideOpen {
                 closeProgramGuide()
                 return
@@ -538,7 +616,8 @@ struct VLCPlayerEngineView: View {
         #endif
     }
 
-    private func resetHideTimer() {
+    /// Shared with `VLCPlayerEngineView+Navigation` for OSD-visible ↑/↓.
+    func resetHideTimer() {
         hideTask?.cancel()
         if isControlsVisible { scheduleHide() }
     }

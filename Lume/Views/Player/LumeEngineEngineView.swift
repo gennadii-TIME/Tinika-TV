@@ -85,10 +85,19 @@ struct LumeEngineEngineView: View {
     @State private var isPanelOpen = false
     /// Bumped to ask the overlay to close its open panel (Menu/back press).
     @State private var panelCloseToken = 0
+    /// Last painted frame held across session recreate (new URL ⇒ new session)
+    /// so a timeshift scrub commit does not flash Color.black.
+    #if canImport(UIKit)
+        @State private var freezeFrame: UIImage?
+    #endif
     #if os(tvOS)
         @StateObject private var controlSession = TVPlayerControlSession()
         @StateObject private var timedMute = TimedMuteController()
         @StateObject private var surfRouter = TVChannelSurfInputRouter()
+        /// Long-press Select (OSD hidden) timed-mute picker.
+        @State private var isTimedMutePickerOpen = false
+        /// Mute menu visible but not focused until Select is released.
+        @State private var timedMutePickerAllowsFocus = false
     #endif
     // Serialises stream changes for this session — the Siri remote's channel
     // surfing and the on-screen transport controls share it, so two swaps can
@@ -130,6 +139,12 @@ struct LumeEngineEngineView: View {
             LumeEngineVideoSurface(coordinator: coordinator)
                 .ignoresSafeArea()
 
+            #if canImport(UIKit)
+                if let freezeFrame {
+                    PlayerFreezeFrame.Overlay(image: freezeFrame)
+                }
+            #endif
+
             // The engine decodes the selected subtitle into `subtitleCues`; the
             // bare video surface draws only video, so this leaf renders those
             // cues. It observes the standalone cue model (not the coordinator),
@@ -142,6 +157,23 @@ struct LumeEngineEngineView: View {
             // before SwiftUI's gesture sees them.
             tapCatcher
                 .ignoresSafeArea()
+
+            #if os(tvOS)
+                // Persistent while timed mute is active — stays up with OSD hidden.
+                TVTimedMuteCornerIndicator(timedMute: timedMute)
+                    .zIndex(25)
+
+                if isTimedMutePickerOpen {
+                    TVTimedMutePickerOverlay(
+                        timedMute: timedMute,
+                        applyMute: { coordinator.isMuted = $0 },
+                        onDismiss: closeTimedMutePicker,
+                        allowsFocus: timedMutePickerAllowsFocus
+                    )
+                    .transition(.opacity)
+                    .zIndex(40)
+                }
+            #endif
 
             // Hold the controls back until the stream starts, so the loading
             // indicator stands in for a player that would otherwise look paused
@@ -177,8 +209,16 @@ struct LumeEngineEngineView: View {
             #endif
 
             if coordinator.isBuffering, !loadFailed {
-                PlayerLoadingIndicator(title: coordinator.hasStartedPlayback ? nil : media.title)
-                    .transition(.opacity)
+                #if canImport(UIKit)
+                    // Keep the last frame readable — don't flash a spinner over it.
+                    if freezeFrame == nil {
+                        PlayerLoadingIndicator(title: coordinator.hasStartedPlayback ? nil : media.title)
+                            .transition(.opacity)
+                    }
+                #else
+                    PlayerLoadingIndicator(title: coordinator.hasStartedPlayback ? nil : media.title)
+                        .transition(.opacity)
+                #endif
             }
 
             if loadFailed {
@@ -215,14 +255,15 @@ struct LumeEngineEngineView: View {
             scheduleHide()
             #if os(tvOS)
                 TVChannelSurfPressRelay.shared.onArrowPress = { direction, source in
-                    if isChannelBrowserOpen || isProgramGuideOpen || isPanelOpen {
+                    if isTimedMutePickerOpen
+                        || isChannelBrowserOpen || isProgramGuideOpen || isPanelOpen
+                    {
                         return
                     }
-                    if isControlsVisible {
-                        TVCompactOSDNavRelay.shared.handleArrow(direction)
-                    } else {
-                        handleChannelSurfInput(direction, source: source)
-                    }
+                    // ↑/↓ always share the surf router. Never route a window
+                    // twin into CompactOSDNavRelay — after a prior showControls
+                    // that mis-route re-armed the hide timer and pinned scrub.
+                    handleChannelSurfInput(direction, source: source)
                 }
             #endif
         }
@@ -262,7 +303,14 @@ struct LumeEngineEngineView: View {
             loadFailed = false
             reconnector.reset()
             clock.reset()
+            #if canImport(UIKit)
+                // Capture before tearDown nils the display layer (new URL is
+                // always a new PlayerSession — cannot keep the surface in place).
+                freezeFrame = coordinator.captureFreezeFrame()
+            #endif
             #if os(tvOS)
+                isTimedMutePickerOpen = false
+                timedMutePickerAllowsFocus = false
                 controlSession.resetForNewStream(mediaIsCatchup: newMedia.isCatchup)
                 if isControlsVisible {
                     controlSession.noteControlsOpened(mediaIsCatchup: newMedia.isCatchup)
@@ -272,11 +320,19 @@ struct LumeEngineEngineView: View {
             coordinator.configure(media: newMedia)
             resetHideTimer()
         }
+        .onChange(of: coordinator.hasStartedPlayback) { _, started in
+            #if canImport(UIKit)
+                if started { freezeFrame = nil }
+            #endif
+        }
         .onChange(of: isControlsVisible) { _, visible in
             #if os(tvOS)
-                // Hand focus to the tap-catcher once the controls vanish so the
-                // remote can bring them back.
-                if !visible { Task { @MainActor in catcherFocused = true } }
+                if visible {
+                    isTimedMutePickerOpen = false
+                    timedMutePickerAllowsFocus = false
+                } else if !isTimedMutePickerOpen {
+                    Task { @MainActor in catcherFocused = true }
+                }
             #endif
         }
         // Handle the Menu/back button at the player root so it reliably overrides
@@ -345,35 +401,64 @@ struct LumeEngineEngineView: View {
     @ViewBuilder
     private var tapCatcher: some View {
         #if os(tvOS)
-            // tvOS has no touch surface: drive the overlay from the Siri remote.
-            // The catcher only takes focus while controls are hidden, so the
-            // control buttons stay reachable otherwise.
-            Button(action: showControls) {
-                Color.clear.contentShape(Rectangle())
-            }
-            .buttonStyle(InvisibleButtonStyle())
-            // Yield focus to the failure overlay's buttons when a stream dies.
-            .disabled(isControlsVisible || isChannelBrowserOpen || isProgramGuideOpen || loadFailed)
-            .focused($catcherFocused)
-            .tvRemoteMoveCommand { direction in
-                // Only while controls are hidden (catcher disabled when OSD is up).
-                // TVTeam: ← channels, → EPG, ↑/↓ surf.
-                if media.allowsLiveTVChrome, direction == .left {
-                    openChannelBrowser()
-                } else if media.allowsLiveTVChrome, direction == .right {
-                    openProgramGuide()
-                } else if media.isLive, direction == .up || direction == .down {
-                    handleChannelSurfInput(direction, source: .moveCommand)
-                } else {
-                    showControls()
-                }
-            }
+            TVPlayerHiddenOSDCatcher(
+                isEnabled: !isControlsVisible
+                    && !isChannelBrowserOpen
+                    && !isProgramGuideOpen
+                    && !loadFailed
+                    && !timedMutePickerAllowsFocus,
+                allowsLiveTVChrome: media.allowsLiveTVChrome,
+                isLive: media.isLive,
+                blocksDirectionalRemote: isTimedMutePickerOpen,
+                focus: $catcherFocused,
+                onShowControls: handleHiddenOSDSelect,
+                onLongSelect: openTimedMutePicker,
+                onLongSelectReleased: focusTimedMutePicker,
+                onOpenChannelBrowser: openChannelBrowser,
+                onOpenProgramGuide: openProgramGuide,
+                onChannelSurf: { handleChannelSurfInput($0, source: .moveCommand) }
+            )
         #else
             Color.clear
                 .contentShape(Rectangle())
                 .onTapGesture { toggleControls() }
         #endif
     }
+
+    #if os(tvOS)
+        /// Short Select with OSD hidden. Volume ± are not delivered to tvOS apps
+        /// via public API, so while timed-mute is active a short Select cancels
+        /// the timer and restores audio instead of raising the OSD.
+        private func handleHiddenOSDSelect() {
+            if timedMute.isMuted {
+                timedMute.unmute(apply: { coordinator.isMuted = $0 })
+                return
+            }
+            showControls()
+        }
+
+        private func openTimedMutePicker() {
+            guard !isControlsVisible,
+                  !isChannelBrowserOpen,
+                  !isProgramGuideOpen,
+                  !loadFailed,
+                  !isTimedMutePickerOpen
+            else { return }
+            timedMutePickerAllowsFocus = false
+            isTimedMutePickerOpen = true
+        }
+
+        private func focusTimedMutePicker() {
+            guard isTimedMutePickerOpen else { return }
+            timedMutePickerAllowsFocus = true
+        }
+
+        private func closeTimedMutePicker() {
+            isTimedMutePickerOpen = false
+            timedMutePickerAllowsFocus = false
+            Task { @MainActor in catcherFocused = true }
+        }
+    #endif
 
     // MARK: - Controls Overlay
 
@@ -457,9 +542,18 @@ struct LumeEngineEngineView: View {
             case .down: surfDirection = .down
             default: return
             }
-            // Heal a stuck `.controls` phase after OSD already hid (missed
-            // noteControlsClosed) so surfing is not permanently blocked.
-            if !isControlsVisible, controlSession.phase == .controls {
+            // OSD-visible ↑/↓: cancel scrub/seek before the gate so a twin that
+            // only hit the window observer can still surf (overlay MoveCommand
+            // already prepared; prepare is idempotent).
+            if isControlsVisible {
+                TVScrubArrowInput.shared.forceStop(scheduleCommit: false)
+                _ = controlSession.prepareChannelSurfWhileOSDVisible(
+                    mediaIsCatchup: media.isCatchup
+                )
+                resetHideTimer()
+            } else if controlSession.phase == .controls {
+                // Heal a stuck `.controls` phase after OSD already hid (missed
+                // noteControlsClosed) so surfing is not permanently blocked.
                 controlSession.noteControlsClosed(mediaIsCatchup: media.isCatchup)
             }
             let gate = TVChannelSurfGate(
@@ -541,6 +635,9 @@ struct LumeEngineEngineView: View {
     }
 
     private func showControls() {
+        #if os(tvOS)
+            guard !isTimedMutePickerOpen else { return }
+        #endif
         guard !isControlsVisible else { resetHideTimer(); return }
         withAnimation(.easeInOut(duration: 0.2)) { isControlsVisible = true }
         #if os(tvOS)
@@ -569,6 +666,10 @@ struct LumeEngineEngineView: View {
             return
         }
         #if os(tvOS)
+            if isTimedMutePickerOpen {
+                closeTimedMutePicker()
+                return
+            }
             if isProgramGuideOpen {
                 closeProgramGuide()
                 return

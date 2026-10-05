@@ -106,7 +106,7 @@
                             .lineLimit(1)
                     }
                     if let premiumStatusLabel, !premiumStatusLabel.isEmpty {
-                        Text(premiumStatusLabel)
+                        Text(verbatim: premiumStatusLabel)
                             .font(.system(size: 17, weight: .medium))
                             .foregroundStyle(.white.opacity(0.55))
                             .lineLimit(1)
@@ -128,7 +128,7 @@
                 menuRow(
                     .premium,
                     title: "Premium",
-                    subtitle: premiumMenuSubtitle,
+                    subtitleVerbatim: premiumMenuSubtitle,
                     icon: "crown"
                 )
                 menuRow(
@@ -147,7 +147,6 @@
                 menuRow(
                     .settings,
                     title: "Settings",
-                    subtitle: nil,
                     icon: "gearshape"
                 )
             }
@@ -157,7 +156,7 @@
         }
 
         private var premiumMenuSubtitle: String {
-            premiumStatusLabel ?? String(localized: "30 days free")
+            premiumStatusLabel ?? AppInterfaceLanguage.localized("30 days free")
         }
 
         private var epgRow: some View {
@@ -195,22 +194,23 @@
             if epgService.isSyncing {
                 switch epgService.phase {
                 case .downloading:
-                    return String(localized: "Downloading program guide…")
+                    return AppInterfaceLanguage.localized("Downloading program guide…")
                 case .processing:
-                    return String(localized: "Processing program guide…")
+                    return AppInterfaceLanguage.localized("Processing program guide…")
                 case .saving:
-                    return String(localized: "Saving program guide…")
+                    return AppInterfaceLanguage.localized("Saving program guide…")
                 case .idle:
-                    return String(localized: "Updating program guide…")
+                    return AppInterfaceLanguage.localized("Updating program guide…")
                 }
             }
-            return String(localized: "Program guide updated")
+            return AppInterfaceLanguage.localized("Program guide updated")
         }
 
         private func menuRow(
             _ action: TVMainMenuAction,
             title: LocalizedStringKey,
-            subtitle: String?,
+            subtitle: LocalizedStringKey? = nil,
+            subtitleVerbatim: String? = nil,
             icon: String
         ) -> some View {
             Button {
@@ -224,8 +224,15 @@
                     VStack(alignment: .leading, spacing: 4) {
                         Text(title)
                             .font(.system(size: 28, weight: .semibold))
-                        if let subtitle, !subtitle.isEmpty {
+                        if let subtitle {
+                            // LocalizedStringKey — respects in-app language (unlike Text(String)).
                             Text(subtitle)
+                                .font(.system(size: 20))
+                                .foregroundStyle(.white.opacity(0.7))
+                                .lineLimit(1)
+                        } else if let subtitleVerbatim, !subtitleVerbatim.isEmpty {
+                            // Already localized dynamic status (trial / purchased).
+                            Text(verbatim: subtitleVerbatim)
                                 .font(.system(size: 20))
                                 .foregroundStyle(.white.opacity(0.7))
                                 .lineLimit(1)

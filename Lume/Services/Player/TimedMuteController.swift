@@ -13,6 +13,10 @@ import Foundation
 import OSLog
 
 /// Timed mute state shared across engine swaps for one playback session.
+///
+/// tvOS note: Siri Remote Volume +/− are not delivered to apps through public
+/// `UIPress` / SwiftUI APIs (they drive the TV/AVR). Early cancel uses short
+/// Select on the hidden-OSD catcher instead — see engine `handleHiddenOSDSelect`.
 @MainActor
 final class TimedMuteController: ObservableObject {
     /// Preset durations offered in the mute picker (minutes).

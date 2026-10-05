@@ -84,7 +84,7 @@ import SwiftUI
                         }
                         if isM3U {
                             TVSettingsValueRow("EPG URL") {
-                                Text(playlist.epgURL ?? String(localized: "None"))
+                                Text(playlist.epgURL ?? AppInterfaceLanguage.localized("None"))
                                     .lineLimit(1)
                                     .truncationMode(.middle)
                             }
@@ -180,7 +180,7 @@ import SwiftUI
                         HStack(spacing: 16) {
                             Text("Sync Enabled")
                             Spacer(minLength: 0)
-                            Text(playlist.syncEnabled ? "On" : "Off")
+                            Text(playlist.syncEnabled ? LocalizedStringKey("On") : LocalizedStringKey("Off"))
                                 .foregroundStyle(.secondary)
                         }
                     }

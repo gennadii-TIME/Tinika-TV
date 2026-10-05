@@ -137,21 +137,21 @@ nonisolated enum CloudSyncErrorDescription {
     private static func mapped(_ code: CKError.Code) -> String? {
         switch code {
         case .quotaExceeded:
-            String(localized: "Your iCloud storage is full. Free up space or upgrade your plan to resume syncing.")
+            AppInterfaceLanguage.localized("Your iCloud storage is full. Free up space or upgrade your plan to resume syncing.")
         case .networkUnavailable, .networkFailure:
-            String(localized: "No connection to iCloud. Sync resumes when you’re back online.")
+            AppInterfaceLanguage.localized("No connection to iCloud. Sync resumes when you’re back online.")
         case .notAuthenticated:
-            String(localized: "Sign in to iCloud to resume syncing.")
+            AppInterfaceLanguage.localized("Sign in to iCloud to resume syncing.")
         case .accountTemporarilyUnavailable:
-            String(localized: "Your iCloud account is temporarily unavailable. Sync resumes automatically.")
+            AppInterfaceLanguage.localized("Your iCloud account is temporarily unavailable. Sync resumes automatically.")
         case .managedAccountRestricted, .permissionFailure:
-            String(localized: "This iCloud account isn’t permitted to sync.")
+            AppInterfaceLanguage.localized("This iCloud account isn’t permitted to sync.")
         case .zoneBusy, .requestRateLimited, .serviceUnavailable:
-            String(localized: "iCloud is busy. Sync will retry automatically.")
+            AppInterfaceLanguage.localized("iCloud is busy. Sync will retry automatically.")
         case .serverRecordChanged:
-            String(localized: "The same item changed on another device. Sync merges it on the next pass.")
+            AppInterfaceLanguage.localized("The same item changed on another device. Sync merges it on the next pass.")
         case .partialFailure:
-            String(localized: "iCloud rejected some changes. Export a diagnostic report for details.")
+            AppInterfaceLanguage.localized("iCloud rejected some changes. Export a diagnostic report for details.")
         default:
             nil
         }

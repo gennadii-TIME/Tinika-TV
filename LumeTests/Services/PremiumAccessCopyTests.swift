@@ -18,17 +18,26 @@ struct PremiumAccessCopyTests {
     }
 
     @Test func `status titles cover every access state`() {
+        AppInterfaceLanguage.set(.english)
         let end = Date().addingTimeInterval(3 * 24 * 60 * 60)
         #expect(!PremiumAccessCopy.statusTitle(for: .loading).isEmpty)
-        #expect(PremiumAccessCopy.statusTitle(for: .purchased) == String(localized: "Full version purchased"))
-        #expect(PremiumAccessCopy.statusTitle(for: .expired) == String(localized: "Trial ended"))
+        #expect(PremiumAccessCopy.statusTitle(for: .purchased) == AppInterfaceLanguage.localized("Full version purchased"))
+        #expect(PremiumAccessCopy.statusTitle(for: .expired) == AppInterfaceLanguage.localized("Trial ended"))
         let trial = PremiumAccessCopy.statusTitle(for: .trial(until: end))
         #expect(trial.contains("3") || trial.contains("Trial"))
     }
 
     @Test func `buy forever title embeds the StoreKit display price`() {
+        AppInterfaceLanguage.set(.english)
         let title = PremiumAccessCopy.buyForeverTitle(displayPrice: "$9.99")
         #expect(title.contains("9.99"))
+    }
+
+    @Test func `status titles follow the in-app language`() {
+        AppInterfaceLanguage.set(.russian)
+        #expect(PremiumAccessCopy.statusTitle(for: .purchased) == "Полная версия приобретена")
+        #expect(PremiumAccessCopy.statusTitle(for: .expired) == "Пробный период завершён")
+        AppInterfaceLanguage.set(.english)
     }
 }
 

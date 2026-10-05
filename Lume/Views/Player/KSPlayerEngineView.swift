@@ -84,6 +84,11 @@ struct KSPlayerEngineView: View {
     #if canImport(UIKit)
         @State var freezeFrame: UIImage?
     #endif
+    /// URL actually fed to `KSVideoPlayer`. Lagged one step behind `media.url`
+    /// during a swap so we can capture the outgoing frame *before* KSPlayer's
+    /// `updateUIView` calls `replace(url:)` (which would otherwise race the
+    /// capture and yield a black Metal snapshot).
+    @State private var lockedPlayerURL: URL?
     /// Per-tick bookkeeping for the 10 Hz `onPlay` callback (progress detection
     /// and the clock-drift watchdog). A reference type held in `@State` on
     /// purpose: mutating its properties — unlike writing `@State` scalars —
@@ -140,6 +145,10 @@ struct KSPlayerEngineView: View {
         @StateObject var controlSession = TVPlayerControlSession()
         @StateObject private var timedMute = TimedMuteController()
         @StateObject var surfRouter = TVChannelSurfInputRouter()
+        /// Long-press Select (OSD hidden) timed-mute picker.
+        @State private var isTimedMutePickerOpen = false
+        /// Mute menu visible but not focused until Select is released.
+        @State private var timedMutePickerAllowsFocus = false
         /// While an overlay panel (episodes / info) is open the controls must
         /// not auto-hide out from under the viewer.
         @State var isPanelOpen = false
@@ -206,13 +215,16 @@ struct KSPlayerEngineView: View {
     // MARK: - tvOS body (shared overlay)
 
     #if os(tvOS)
+        /// URL currently bound into KSPlayer — see `lockedPlayerURL`.
+        private var playbackURL: URL { lockedPlayerURL ?? media.url }
+
         private var tvBody: some View {
             let options = makeOptions()
             return ZStack {
                 Color.black
                     .ignoresSafeArea()
 
-                KSVideoPlayer(coordinator: coordinator, url: media.url, options: options)
+                KSVideoPlayer(coordinator: coordinator, url: playbackURL, options: options)
                     .onStateChanged { _, state in
                         // Defer past any in-flight SwiftUI update. Publishing
                         // `@Published` / `@Observable` (and host `@State`)
@@ -253,12 +265,7 @@ struct KSPlayerEngineView: View {
                     // Hold the outgoing frame over Color.black until the new
                     // stream paints its first frame (confirmed timeshift seek).
                     if let freezeFrame {
-                        Image(uiImage: freezeFrame)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .ignoresSafeArea()
-                            .allowsHitTesting(false)
+                        PlayerFreezeFrame.Overlay(image: freezeFrame)
                     }
                 #endif
 
@@ -268,6 +275,21 @@ struct KSPlayerEngineView: View {
                 KSSubtitleOverlay(subtitleModel: coordinator.subtitleModel)
 
                 tapCatcher
+
+                // Persistent while timed mute is active — stays up with OSD hidden.
+                TVTimedMuteCornerIndicator(timedMute: timedMute)
+                    .zIndex(25)
+
+                if isTimedMutePickerOpen {
+                    TVTimedMutePickerOverlay(
+                        timedMute: timedMute,
+                        applyMute: { engine.isMuted = $0 },
+                        onDismiss: closeTimedMutePicker,
+                        allowsFocus: timedMutePickerAllowsFocus
+                    )
+                    .transition(.opacity)
+                    .zIndex(40)
+                }
 
                 // Suppress the controls (and their Play button) until the stream
                 // has actually started, so viewers see a loading indicator
@@ -328,20 +350,22 @@ struct KSPlayerEngineView: View {
             .subtitleSearch(isPresented: $isSearchingSubtitles, media: media, onPick: applyExternalSubtitle)
             .preferredColorScheme(.dark)
             .onAppear {
+                lockedPlayerURL = media.url
                 engine.attach(coordinator: coordinator)
                 attachNowPlayingTransport()
                 scheduleHide()
                 startStartupWatchdog()
                 #if os(tvOS)
                     TVChannelSurfPressRelay.shared.onArrowPress = { direction, source in
-                        if isChannelBrowserOpen || isProgramGuideOpen || isPanelOpen {
+                        if isTimedMutePickerOpen
+                            || isChannelBrowserOpen || isProgramGuideOpen || isPanelOpen
+                        {
                             return
                         }
-                        if isControlsVisible {
-                            TVCompactOSDNavRelay.shared.handleArrow(direction)
-                        } else {
-                            handleChannelSurfInput(direction, source: source)
-                        }
+                        // ↑/↓ always share the surf router. Never route a window
+                        // twin into CompactOSDNavRelay — after a prior showControls
+                        // that mis-route re-armed the hide timer and pinned scrub.
+                        handleChannelSurfInput(direction, source: source)
                     }
                 #endif
             }
@@ -370,40 +394,47 @@ struct KSPlayerEngineView: View {
                 }
             }
             .onChange(of: media) { oldMedia, newMedia in
-                // Capture the last frame *before* KSPlayer tears down the old
-                // URL so a confirmed timeshift seek does not flash Color.black.
-                captureFreezeFrame()
-                // The host swapped the stream (KSPlayer reloads its URL
-                // automatically). Reset local scrubbing / panel state.
-                isSeeking = false
-                seekPosition = 0
-                isPanelOpen = false
-                // Keep the OSD up across live↔timeshift URL swaps — dropping
-                // hasStartedPlayback hid the controls and looked like a blink.
-                let keepChrome = oldMedia.isLive || oldMedia.isCatchup
-                    || newMedia.isLive || newMedia.isCatchup
-                if !keepChrome {
-                    hasStartedPlayback = false
+                // Capture while `lockedPlayerURL` still points at the outgoing
+                // stream, then advance the bound URL so KSPlayer replaces.
+                Task { @MainActor in
+                    await captureFreezeFrame()
+                    lockedPlayerURL = newMedia.url
+                    // The host swapped the stream. Reset local scrubbing / panel state.
+                    isSeeking = false
+                    seekPosition = 0
+                    isPanelOpen = false
+                    isTimedMutePickerOpen = false
+                    timedMutePickerAllowsFocus = false
+                    // Keep the OSD up across live↔timeshift URL swaps — dropping
+                    // hasStartedPlayback hid the controls and looked like a blink.
+                    let keepChrome = oldMedia.isLive || oldMedia.isCatchup
+                        || newMedia.isLive || newMedia.isCatchup
+                    if !keepChrome {
+                        hasStartedPlayback = false
+                    }
+                    hasSeenReadyToPlay = false
+                    isBuffering = true
+                    loadFailed = false
+                    tick.reset()
+                    cancelStallWatchdog()
+                    reconnector.reset()
+                    engine.reset()
+                    controlSession.resetForNewStream(mediaIsCatchup: newMedia.isCatchup)
+                    if keepChrome || isControlsVisible {
+                        controlSession.noteControlsOpened(mediaIsCatchup: newMedia.isCatchup)
+                    }
+                    timedMute.reassert { engine.isMuted = $0 }
+                    startStartupWatchdog()
+                    resetHideTimer()
                 }
-                hasSeenReadyToPlay = false
-                isBuffering = true
-                loadFailed = false
-                tick.reset()
-                cancelStallWatchdog()
-                reconnector.reset()
-                engine.reset()
-                controlSession.resetForNewStream(mediaIsCatchup: newMedia.isCatchup)
-                if keepChrome || isControlsVisible {
-                    controlSession.noteControlsOpened(mediaIsCatchup: newMedia.isCatchup)
-                }
-                timedMute.reassert { engine.isMuted = $0 }
-                startStartupWatchdog()
-                resetHideTimer()
             }
             .onChange(of: isControlsVisible) { _, visible in
                 // Hand focus to the tap-catcher once the controls vanish so the
                 // remote can bring them back.
-                if !visible {
+                if visible {
+                    isTimedMutePickerOpen = false
+                    timedMutePickerAllowsFocus = false
+                } else if !isTimedMutePickerOpen {
                     Task { @MainActor in catcherFocused = true }
                 }
             }
@@ -418,34 +449,62 @@ struct KSPlayerEngineView: View {
         }
 
         private var tapCatcher: some View {
-            // tvOS has no touch surface: drive the overlay from the Siri remote.
-            // The catcher only takes focus while controls are hidden, so the
-            // control buttons stay reachable otherwise.
-            Button(action: showControls) {
-                Color.clear.contentShape(Rectangle())
+            // Short Select → OSD; long Select → timed mute. Disabled while the
+            // OSD, browser, guide, mute picker, or failure UI owns the remote.
+            TVPlayerHiddenOSDCatcher(
+                isEnabled: !isControlsVisible
+                    && !isChannelBrowserOpen
+                    && !isProgramGuideOpen
+                    && !loadFailed
+                    && !timedMutePickerAllowsFocus,
+                allowsLiveTVChrome: media.allowsLiveTVChrome,
+                isLive: media.isLive,
+                blocksDirectionalRemote: isTimedMutePickerOpen,
+                focus: $catcherFocused,
+                onShowControls: handleHiddenOSDSelect,
+                onLongSelect: openTimedMutePicker,
+                onLongSelectReleased: focusTimedMutePicker,
+                onOpenChannelBrowser: openChannelBrowser,
+                onOpenProgramGuide: openProgramGuide,
+                onChannelSurf: { handleChannelSurfInput($0, source: .moveCommand) }
+            )
+        }
+
+        /// Short Select with OSD hidden. Volume ± are not delivered to tvOS apps
+        /// via public API, so while timed-mute is active a short Select cancels
+        /// the timer and restores audio instead of raising the OSD.
+        private func handleHiddenOSDSelect() {
+            if timedMute.isMuted {
+                timedMute.unmute(apply: { engine.isMuted = $0 })
+                return
             }
-            .buttonStyle(KSInvisibleButtonStyle())
-            // Yield focus to the failure overlay's buttons when a stream dies.
-            .disabled(isControlsVisible || isChannelBrowserOpen || isProgramGuideOpen || loadFailed)
-            .focused($catcherFocused)
-            .tvRemoteMoveCommand { direction in
-                // Only while controls are hidden (this catcher is disabled when
-                // the OSD is up). ↑/↓ must never surf once the OSD owns focus —
-                // that lives in TVPlayerControlsOverlay's focus path.
-                // TVTeam mapping with OSD closed: ← channels, → EPG, ↑/↓ surf.
-                if media.allowsLiveTVChrome, direction == .left {
-                    openChannelBrowser()
-                } else if media.allowsLiveTVChrome, direction == .right {
-                    openProgramGuide()
-                } else if media.isLive, direction == .up || direction == .down {
-                    handleChannelSurfInput(direction, source: .moveCommand)
-                } else {
-                    showControls()
-                }
-            }
+            showControls()
+        }
+
+        private func openTimedMutePicker() {
+            guard !isControlsVisible,
+                  !isChannelBrowserOpen,
+                  !isProgramGuideOpen,
+                  !loadFailed,
+                  !isTimedMutePickerOpen
+            else { return }
+            timedMutePickerAllowsFocus = false
+            isTimedMutePickerOpen = true
+        }
+
+        private func focusTimedMutePicker() {
+            guard isTimedMutePickerOpen else { return }
+            timedMutePickerAllowsFocus = true
+        }
+
+        private func closeTimedMutePicker() {
+            isTimedMutePickerOpen = false
+            timedMutePickerAllowsFocus = false
+            Task { @MainActor in catcherFocused = true }
         }
 
         func showControls() {
+            guard !isTimedMutePickerOpen else { return }
             guard !isControlsVisible else { resetHideTimer(); return }
             withAnimation(.easeInOut(duration: 0.2)) { isControlsVisible = true }
             controlSession.noteControlsOpened(mediaIsCatchup: media.isCatchup)
@@ -462,7 +521,9 @@ struct KSPlayerEngineView: View {
         }
 
         private func handleMenuPress() {
-            if loadFailed {
+            if isTimedMutePickerOpen {
+                closeTimedMutePicker()
+            } else if loadFailed {
                 closePlayer()
             } else if isProgramGuideOpen {
                 closeProgramGuide()

@@ -20,6 +20,7 @@ import SwiftUI
         }
 
         func updateUIView(_ view: LumeEngineHostView, context _: Context) {
+            coordinator.freezeHostView = view
             view.install(layer: coordinator.displayLayer)
         }
     }

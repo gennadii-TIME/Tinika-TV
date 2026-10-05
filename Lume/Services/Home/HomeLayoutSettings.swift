@@ -44,13 +44,13 @@ enum HomeSection: String, CaseIterable, Identifiable {
     /// References the same catalog keys as `title`.
     var displayName: String {
         switch self {
-        case .recentlyWatched: String(localized: "Recently Watched")
-        case .favorites: String(localized: "Favorites")
-        case .forYou: String(localized: "For You")
-        case .trendingMovies: String(localized: "Trending Movies")
-        case .trendingSeries: String(localized: "Trending Series")
-        case .traktWatchlist: String(localized: "Trakt Watchlist")
-        case .sports: String(localized: "Sports")
+        case .recentlyWatched: AppInterfaceLanguage.localized("Recently Watched")
+        case .favorites: AppInterfaceLanguage.localized("Favorites")
+        case .forYou: AppInterfaceLanguage.localized("For You")
+        case .trendingMovies: AppInterfaceLanguage.localized("Trending Movies")
+        case .trendingSeries: AppInterfaceLanguage.localized("Trending Series")
+        case .traktWatchlist: AppInterfaceLanguage.localized("Trakt Watchlist")
+        case .sports: AppInterfaceLanguage.localized("Sports")
         }
     }
 
